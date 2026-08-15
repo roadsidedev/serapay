@@ -29,27 +29,47 @@
   --color-ring: var(--ring);
 }
 
-:root, .dark {
-  --radius: 0.8rem;
-  --background: oklch(0.12 0.012 142);
-  --foreground: oklch(0.96 0.012 132);
-  --card: oklch(0.16 0.016 142);
-  --card-foreground: oklch(0.96 0.012 132);
-  --popover: oklch(0.15 0.018 142);
-  --popover-foreground: oklch(0.96 0.012 132);
-  --primary: oklch(0.9 0.18 132);
-  --primary-foreground: oklch(0.16 0.02 140);
-  --secondary: oklch(0.23 0.018 142);
-  --secondary-foreground: oklch(0.88 0.012 132);
-  --muted: oklch(0.23 0.018 142);
-  --muted-foreground: oklch(0.69 0.016 142);
-  --accent: oklch(0.24 0.02 142);
-  --accent-foreground: oklch(0.96 0.012 132);
-  --destructive: oklch(0.68 0.19 27);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 11%);
-  --ring: oklch(0.9 0.18 132);
+:root {
+  --radius: 0.9rem;
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.145 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.145 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.47 0 0);
+  --accent: oklch(0.94 0 0);
+  --accent-foreground: oklch(0.145 0 0);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.9 0 0);
+  --ring: oklch(0.36 0 0);
+}
+
+.dark {
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.115 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.115 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.17 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.17 0 0);
+  --muted-foreground: oklch(0.63 0 0);
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 13%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.78 0 0);
 }
 
 @layer base {
@@ -58,19 +78,19 @@
   button:not(:disabled), [role="button"]:not([aria-disabled="true"]), [type="button"]:not(:disabled), [type="submit"]:not(:disabled), a[href], select:not(:disabled), input[type="checkbox"]:not(:disabled), input[type="radio"]:not(:disabled) { @apply cursor-pointer; }
   button { transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1), color 160ms cubic-bezier(0.23, 1, 0.32, 1); }
   button:active:not(:disabled) { transform: scale(0.97); }
-  button:focus, button:focus-visible, a[href]:focus, a[href]:focus-visible, input:focus, input:focus-visible, select:focus, select:focus-visible, textarea:focus, textarea:focus-visible, [role="button"]:focus, [role="button"]:focus-visible, [role="switch"]:focus, [role="switch"]:focus-visible { outline: 2px solid rgb(179 255 62 / 78%) !important; outline-offset: 3px !important; }
+  button:focus, button:focus-visible, a[href]:focus, a[href]:focus-visible, input:focus, input:focus-visible, select:focus, select:focus-visible, textarea:focus, textarea:focus-visible, [role="button"]:focus, [role="button"]:focus-visible, [role="switch"]:focus, [role="switch"]:focus-visible { outline: 2px solid currentColor !important; outline-offset: 3px !important; }
 }
 
 @layer components {
   .field-input {
     height: 2.5rem;
-    border-color: rgb(255 255 255 / 10%);
-    background: rgb(0 0 0 / 20%);
-    color: white;
+    border-color: var(--input);
+    background: var(--card);
+    color: var(--foreground);
     font-size: 0.875rem;
   }
-  .field-input::placeholder { color: rgb(255 255 255 / 25%); }
-  .field-input:focus-visible { outline: 2px solid rgb(179 255 62 / 40%); outline-offset: 2px; }
+  .field-input::placeholder { color: var(--muted-foreground); }
+  .field-input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -79,5 +99,5 @@
 
 @media (max-width: 1023px) {
   main.px-4 { padding-bottom: max(7rem, calc(5.5rem + env(safe-area-inset-bottom))) !important; }
-  nav.fixed.inset-x-0.bottom-0 { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+  nav.fixed { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
 }

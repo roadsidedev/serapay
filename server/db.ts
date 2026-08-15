@@ -34,7 +34,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
   const values: InsertUser = { openId: user.openId };
   const updateSet: Record<string, unknown> = {};
-  const textFields = ["privyDid", "username", "embeddedWalletAddress", "avatarUrl", "preferredTheme", "name", "email", "loginMethod"] as const;
+  const textFields = ["privyDid", "username", "embeddedWalletAddress", "avatarUrl", "preferredTheme", "countryCode", "preferredCurrency", "preferredLanguage", "deviceApproval", "name", "email", "loginMethod"] as const;
 
   for (const field of textFields) {
     if (user[field] !== undefined) {
@@ -81,7 +81,7 @@ export async function getUserByUsername(username: string) {
   return result[0];
 }
 
-export async function updateUserProfile(userId: number, profile: Pick<InsertUser, "username" | "name" | "embeddedWalletAddress" | "avatarUrl" | "preferredTheme">) {
+export async function updateUserProfile(userId: number, profile: Pick<InsertUser, "username" | "name" | "embeddedWalletAddress" | "avatarUrl" | "preferredTheme" | "countryCode" | "preferredCurrency" | "preferredLanguage" | "deviceApproval">) {
   const db = await getDb();
   if (!db) throw new Error("Profile storage is unavailable. Configure DATABASE_URL with a Neon Postgres connection string.");
 

@@ -26,7 +26,15 @@
 - [x] Implement a premium mobile-first responsive system and companion-app readiness guidance for App Store and Play Store distribution.
 - [x] Rename the connected GitHub repository to serapay and push the current project source with a descriptive commit.
 - [x] Keep all Privy, Sera, Neon, Railway, and Vercel configuration environment-driven, with no embedded credentials or deployment-specific values in source code.
-- [ ] Apply the pending Privy profile and mini-app personalization migrations to Neon, then verify username, theme, favorites, and recent-launch persistence with a real Privy-authenticated account.
+- [ ] Apply the pending Privy profile, mini-app personalization, and account-preference migrations to Neon, then verify username, theme, regional preferences, favorites, and recent-launch persistence with a real Privy-authenticated account.
 - [x] Replace the fixed mobile bottom navigation with a floating, safe-area-aware Wallet, Explore, and Account control.
 - [x] Remove Swap and Activity as standalone navigation pages while keeping swap execution embedded in Wallet and activity accessible from Account.
 - [x] Consolidate developer tools and mini-app management into the Account core page without losing owner-review access.
+- [x] Rebuild the frontend visual system in a premium black-and-white shadcn-style design and remove legacy green visual treatments.
+- [x] Simplify the Wallet shell by removing user-facing wallet-state and network-indicator surfaces while retaining mainnet-safe transaction behavior.
+- [x] Polish Explore into a clean Explore / My Mini Apps toggle with category-led discovery and a direct Dev Console action.
+- [x] Consolidate developer staging, submission, and review into one accessible Dev Console experience.
+- [x] Rebuild Account preferences with country, currency, language, theme, profile avatar, and accessible preference controls.
+- [x] Add device-authenticated transaction-approval readiness for passkeys and platform biometrics, preserving wallet-signing security boundaries.
+- [x] Replace remaining legacy green-styled components and literals in Activity, Vault, swap/status, and any residual wallet surfaces with native black-and-white shadcn-consistent styles.
+- [x] Re-run a client-wide style audit confirming no legacy green visual treatments remain before final release verification.
