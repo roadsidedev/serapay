@@ -27,3 +27,6 @@
 - [x] Rename the connected GitHub repository to serapay and push the current project source with a descriptive commit.
 - [x] Keep all Privy, Sera, Neon, Railway, and Vercel configuration environment-driven, with no embedded credentials or deployment-specific values in source code.
 - [ ] Apply the pending Privy profile and mini-app personalization migrations to Neon, then verify username, theme, favorites, and recent-launch persistence with a real Privy-authenticated account.
+- [x] Replace the fixed mobile bottom navigation with a floating, safe-area-aware Wallet, Explore, and Account control.
+- [x] Remove Swap and Activity as standalone navigation pages while keeping swap execution embedded in Wallet and activity accessible from Account.
+- [x] Consolidate developer tools and mini-app management into the Account core page without losing owner-review access.
