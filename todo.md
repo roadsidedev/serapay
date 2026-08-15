@@ -17,3 +17,11 @@
 - [x] Prepare a Vercel-friendly frontend deployment boundary, public environment contract, and CORS configuration.
 - [ ] Configure a production authentication provider compatible with Railway and Vercel, then bootstrap the SeraPay owner role in Neon.
 - [ ] Add the supplied server-only Sera credentials to Railway and verify protected balance, activity, permit, deposit, and withdrawal flows against a connected wallet.
+- [ ] Replace preview-only authentication with Privy social onboarding and a secure production identity boundary.
+- [ ] Add a username model derived from the authenticated social identity, with protected availability validation and user-facing account naming.
+- [ ] Redesign the wallet home for mobile-first balance, earn, swap, transfer, FX rates, and inline execution journeys.
+- [ ] Expand Explore with published mini-app discovery, favorites, recently visited apps, and user-specific My Mini Apps views.
+- [ ] Expand account settings with wallet export and management, theme selection, username profile, activity history, and developer build controls.
+- [ ] Add a developer staging suite for safely previewing and validating a mini-app before publishing it for review.
+- [ ] Implement a premium mobile-first responsive system and companion-app readiness guidance for App Store and Play Store distribution.
+- [ ] Rename the connected GitHub repository to serapay and push the current project source with a descriptive commit.
