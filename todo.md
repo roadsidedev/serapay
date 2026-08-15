@@ -38,3 +38,6 @@
 - [x] Add device-authenticated transaction-approval readiness for passkeys and platform biometrics, preserving wallet-signing security boundaries.
 - [x] Replace remaining legacy green-styled components and literals in Activity, Vault, swap/status, and any residual wallet surfaces with native black-and-white shadcn-consistent styles.
 - [x] Re-run a client-wide style audit confirming no legacy green visual treatments remain before final release verification.
+- [x] Audit and harden all Sera native API routes used by swap and Vault/earn flows against the official contract.
+- [x] Add production readiness tests and safeguards for Sera quote, signing, execution, Vault deposit, withdrawal, and settlement flows.
+- [x] Create an operator-ready deployment package with a single Neon migration SQL script plus Railway and Vercel deployment instructions and environment-variable checklists.

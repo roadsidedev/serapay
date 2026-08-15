@@ -18,10 +18,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import { createWalletActivityEntry, readWalletActivity, recordWalletActivity, type WalletActivityEntry } from "@/lib/walletActivity";
-import { connectInjectedWallet, getWalletChainId, sendErc20Transaction, signSeraSwap } from "@/lib/walletClient";
+import { connectInjectedWallet, getWalletChainId, sendErc20Transaction, signSeraSwap, signTypedData } from "@/lib/walletClient";
 import { miniAppCategories, miniAppPermissions, type MiniAppPermission } from "../../../shared/miniApps";
 import { encodeErc20Transfer, parseTokenAmount, type SeraSwapIntent } from "../../../shared/wallet";
 import { CORE_NAVIGATION, type CoreView } from "../../../shared/coreNavigation";
+import { isSeraQuoteUsable, isSeraSettlementTerminal } from "../../../shared/sera";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Activity,
@@ -78,6 +79,13 @@ type QuoteResponse = {
   output_amount?: string;
   min_output_amount?: string;
   fee_amount?: string;
+  expires_at?: string;
+  permit?: {
+    permit_supported?: boolean;
+    permit_required?: boolean;
+    suggested_deadline?: string | number;
+    eip712?: unknown;
+  };
 };
 
 const navigation = CORE_NAVIGATION.map(item => ({ ...item, icon: item.id === "wallet" ? WalletCards : item.id === "explore" ? Grid2X2 : Settings2 }));
@@ -272,7 +280,7 @@ function SwapView({ address, network, tokens, onActivity }: { address: string | 
     if (network !== "mainnet") return toast.error("Sera swaps use the documented Ethereum Mainnet signing domain.");
     try {
       const fromAmount = parseTokenAmount(amount, selectedFrom.decimals);
-      const result = await quoteMutation.mutateAsync({ fromToken, toToken, fromAmount, ownerAddress: address, recipient: address, expiration: Math.floor(Date.now() / 1000) + 120, gasMode: "receive_less" });
+      const result = await quoteMutation.mutateAsync({ fromToken, toToken, fromAmount, ownerAddress: address, recipient: address, expiration: Math.floor(Date.now() / 1000) + 30, gasMode: "receive_less" });
       setQuote(result as QuoteResponse);
       setSwapStatus("idle");
       toast.success("Fresh Sera route ready for signature.");
@@ -283,10 +291,21 @@ function SwapView({ address, network, tokens, onActivity }: { address: string | 
     if (!address || !quote) return;
     try {
       setSwapStatus("submitting");
+      if (!isSeraQuoteUsable(quote.expires_at)) {
+        setQuote(null);
+        setConfirmOpen(false);
+        throw new Error("This Sera quote has expired. Request a new quote before signing.");
+      }
       const chainId = await getWalletChainId();
       if (chainId !== "0x1") throw new Error("Switch your wallet to Ethereum Mainnet before signing.");
       const signature = await signSeraSwap(address, quote.route_params);
-      const result = await executeMutation.mutateAsync({ uuid: quote.uuid, signature });
+      const permitRequired = Boolean(quote.permit?.permit_required);
+      if (permitRequired && (!quote.permit?.permit_supported || !quote.permit.eip712 || !quote.permit.suggested_deadline)) {
+        throw new Error("Sera requires a permit for this route, but the quote did not include a signable permit payload.");
+      }
+      const permitSignature = permitRequired ? await signTypedData(address, quote.permit?.eip712) : undefined;
+      const permitDeadline = permitRequired ? Number(quote.permit?.suggested_deadline) : undefined;
+      const result = await executeMutation.mutateAsync({ uuid: quote.uuid, signature, ...(permitSignature ? { permitSignature, permitDeadline } : {}) });
       toast.success("Swap submitted to Sera.", { description: typeof result === "object" && result ? "Track the outcome from Activity." : undefined });
       onActivity(createWalletActivityEntry({ kind: "swap", id: quote.uuid, label: `${selectedFrom?.symbol ?? "Asset"} → ${selectedTo?.symbol ?? "asset"} swap` }));
       setSubmittedUuid(quote.uuid);
@@ -311,8 +330,7 @@ function SwapView({ address, network, tokens, onActivity }: { address: string | 
       setSwapStatusDetail("Sera has not exposed a matching order yet. Refresh again shortly.");
       return;
     }
-    const status = latest.status.toLowerCase();
-    const terminal = ["settled", "filled", "completed", "complete", "success"].some(value => status.includes(value));
+    const terminal = isSeraSettlementTerminal(latest.status);
     setSwapStatus(terminal ? "settled" : "submitted");
     setSwapStatusDetail(`Sera order status: ${latest.status}.`);
   };
@@ -324,7 +342,7 @@ function TokenAmountCard({ label, token, value, onChange, tokens, selected, onSe
   return <div className="rounded-2xl border border-white/[0.09] bg-black/20 p-4"><div className="flex items-center justify-between"><p className="text-xs text-white/42">{label}</p><p className="text-[11px] text-white/28">{token?.currency ?? "Select asset"}</p></div><div className="mt-3 flex items-center gap-3"><Input value={value} onChange={event => onChange?.(event.target.value)} readOnly={readOnly} inputMode="decimal" placeholder="0.00" className="h-10 flex-1 border-0 bg-transparent p-0 text-2xl font-medium text-white placeholder:text-white/20 focus-visible:ring-0" /><Select value={selected} onValueChange={onSelect}><SelectTrigger className="h-11 w-[142px] rounded-xl border-white/[0.09] bg-white/[0.06] text-white"><SelectValue placeholder="Choose" /></SelectTrigger><SelectContent>{tokens.map(item => <SelectItem key={item.address} value={item.address}>{item.symbol} · {item.currency}</SelectItem>)}</SelectContent></Select></div></div>;
 }
 
-function SwapDetail({ label, value }: { label: string; value: string }) { return <div className="flex items-center justify-between"><span className="text-white/38">{label}</span><span className="text-white/70">{value}</span></div>; }
+function SwapDetail({ label, value }: { label: string; value: string }) { return <div className="flex items-center justify-between"><span className="text-white/38">{label}</span><span className="text-white/70">{label === "Quote lifetime" ? "About 30 seconds" : value}</span></div>; }
 
 function SwapSubmissionPanel({ status, uuid, detail, onRefresh }: { status: "idle" | "submitting" | "submitted" | "settled" | "failed"; uuid: string | null; detail: string; onRefresh: () => void }) {
   if (status === "idle") return null;

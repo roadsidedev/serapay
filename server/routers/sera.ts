@@ -9,11 +9,14 @@ import {
   normaliseSeraReadAddress,
   SERA_API_BASE_URL,
   toSeraErrorMessage,
+  validateSeraSwapExecution,
 } from "../../shared/sera";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 
 const walletAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Enter a valid Ethereum address.");
 const rawAmountSchema = z.string().regex(/^\d+$/, "Enter a raw unsigned integer amount.");
+const swapExecutionWindowMs = 30_000;
+const issuedSwapQuotes = new Map<string, { permitRequired: boolean; expiresAt: number }>();
 const builtTransactionSchema = z.object({
   to: walletAddressSchema,
   data: z.string().regex(/^0x[a-fA-F0-9]*$/),
@@ -43,6 +46,41 @@ function getReadAccessDescriptor() {
   if (!apiKey) return "Not configured";
   const fingerprint = createHash("sha256").update(apiKey).digest("hex").slice(0, 12);
   return `Server-managed key · ${fingerprint}`;
+}
+
+function getIssuedSwapQuote(response: unknown, requestedExpiration: number) {
+  if (!response || typeof response !== "object") return null;
+  const quote = response as { uuid?: unknown; expires_at?: unknown; permit?: { permit_required?: unknown } };
+  if (typeof quote.uuid !== "string" || quote.uuid.length === 0) return null;
+
+  const rawExpiry = quote.expires_at;
+  const parsedExpiry = typeof rawExpiry === "number"
+    ? rawExpiry * 1_000
+    : typeof rawExpiry === "string" && /^\d+$/.test(rawExpiry)
+      ? Number(rawExpiry) * 1_000
+      : typeof rawExpiry === "string"
+        ? Date.parse(rawExpiry)
+        : Number.NaN;
+  const requestedExpiry = requestedExpiration * 1_000;
+  const expiresAt = Number.isFinite(parsedExpiry) ? Math.min(parsedExpiry, requestedExpiry) : requestedExpiry;
+
+  return {
+    uuid: quote.uuid,
+    permitRequired: quote.permit?.permit_required === true,
+    expiresAt: Math.min(expiresAt, Date.now() + swapExecutionWindowMs),
+  };
+}
+
+function consumeIssuedSwapQuote(uuid: string) {
+  const issuedQuote = issuedSwapQuotes.get(uuid);
+  issuedSwapQuotes.delete(uuid);
+  if (!issuedQuote || issuedQuote.expiresAt <= Date.now()) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "This Sera quote is unavailable or expired. Request a fresh quote before signing.",
+    });
+  }
+  return issuedQuote;
 }
 
 async function parseResponse(response: Response) {
@@ -94,8 +132,8 @@ export const seraRouter = router({
         gasMode: z.enum(["receive_less", "pay_gas"]).default("receive_less"),
       }),
     )
-    .mutation(({ input }) =>
-      requestSera("/swap/quote", {
+    .mutation(async ({ input }) => {
+      const response = await requestSera("/swap/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -107,17 +145,22 @@ export const seraRouter = router({
           expiration: input.expiration,
           gas_mode: input.gasMode,
         }),
-      }),
-    ),
-  executeSwap: publicProcedure
-    .input(z.object({ uuid: z.string().min(1), signature: z.string().regex(/^0x[a-fA-F0-9]+$/) }))
-    .mutation(input =>
-      requestSera("/swap", {
+      });
+      const issuedQuote = getIssuedSwapQuote(response, input.expiration);
+      if (issuedQuote) issuedSwapQuotes.set(issuedQuote.uuid, issuedQuote);
+      return response;
+    }),
+  executeSwap: protectedProcedure
+    .input(z.object({ uuid: z.string().min(1), signature: z.string().regex(/^0x[a-fA-F0-9]+$/), permitSignature: z.string().regex(/^0x[a-fA-F0-9]+$/).optional(), permitDeadline: z.number().int().positive().optional() }).refine(value => Boolean(value.permitSignature) === Boolean(value.permitDeadline), "A Sera permit signature and deadline must be supplied together."))
+    .mutation(({ input }) => {
+      const issuedQuote = consumeIssuedSwapQuote(input.uuid);
+      const execution = validateSeraSwapExecution({ ...input, permitRequired: issuedQuote.permitRequired });
+      return requestSera("/swap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      }),
-    ),
+        body: JSON.stringify({ uuid: execution.uuid, signature: execution.signature, ...(execution.permitSignature ? { permit_signature: execution.permitSignature, permit_deadline: execution.permitDeadline } : {}) }),
+      });
+    }),
   balances: protectedProcedure.input(walletAddressSchema).query(async ({ input }) => {
     const response = await requestSera(`/balances?owner_address=${encodeURIComponent(normaliseSeraReadAddress(input))}`, {}, true);
     return normaliseSeraBalances(response as Parameters<typeof normaliseSeraBalances>[0]);

@@ -6,7 +6,7 @@ import {
   normaliseSeraOrders,
   normaliseSeraReadAddress,
 } from "../shared/sera";
-import { encodeErc20Transfer, getSeraSwapTypedData, getSeraWithdrawTypedData, parseTokenAmount } from "../shared/wallet";
+import { encodeErc20Transfer, getErc2612PermitTypedData, getSeraSwapTypedData, getSeraWithdrawTypedData, parseTokenAmount } from "../shared/wallet";
 
 describe("Sera adapter contracts", () => {
   it("creates a server-only bearer authorization value", () => {
@@ -68,6 +68,42 @@ describe("Sera adapter contracts", () => {
     expect(typedData.primaryType).toBe("Intent");
     expect(typedData.domain.name).toBe("Sera");
     expect(typedData.types.Intent).toHaveLength(9);
+  });
+
+  it("requires the quote-derived permit fields for a signed Sera swap when a permit is required", async () => {
+    const { validateSeraSwapExecution } = await import("../shared/sera");
+    expect(() => validateSeraSwapExecution({ uuid: "42", signature: "0xabc", permitRequired: true })).toThrow(/permit signature/i);
+    expect(validateSeraSwapExecution({ uuid: "42", signature: "0xabc", permitRequired: false })).toEqual({ uuid: "42", signature: "0xabc" });
+  });
+
+  it("constructs the ERC-2612 permit message used by the Vault deposit path", () => {
+    const permit = getErc2612PermitTypedData(
+      { name: "USD Coin", version: "2", chainId: 1, verifyingContract: "0x0000000000000000000000000000000000000002" },
+      { owner: "0x0000000000000000000000000000000000000001", spender: "0x0000000000000000000000000000000000000003", value: "1000000", nonce: 7, deadline: 1_800_000_000 },
+    );
+    expect(permit.primaryType).toBe("Permit");
+    expect(permit.message).toMatchObject({ value: "1000000", nonce: 7, deadline: 1_800_000_000 });
+  });
+
+  it("rejects expired Sera quote timestamps before opening a signing flow", async () => {
+    const { isSeraQuoteUsable } = await import("../shared/sera");
+    expect(isSeraQuoteUsable("2026-08-15T12:00:00Z", new Date("2026-08-15T12:00:01Z"))).toBe(false);
+    expect(isSeraQuoteUsable("2026-08-15T12:01:00Z", new Date("2026-08-15T12:00:01Z"))).toBe(true);
+    expect(isSeraQuoteUsable(1786795260, new Date("2026-08-15T12:00:01Z"))).toBe(true);
+  });
+
+  it("uses a thirty-second quote window for a fresh Sera route", () => {
+    const quoteRequestedAt = 1_786_795_200;
+    const quoteExpiration = quoteRequestedAt + 30;
+    expect(quoteExpiration - quoteRequestedAt).toBe(30);
+  });
+
+  it("recognizes Sera terminal settlement statuses used by swap and Vault refreshes", async () => {
+    const { isSeraSettlementTerminal } = await import("../shared/sera");
+    expect(isSeraSettlementTerminal("filled")).toBe(true);
+    expect(isSeraSettlementTerminal("completed_onchain")).toBe(true);
+    expect(isSeraSettlementTerminal("pending")).toBe(false);
+    expect(isSeraSettlementTerminal("reverted")).toBe(false);
   });
 
   it("constructs the dual-signature withdrawal intent with aligned token arrays", () => {

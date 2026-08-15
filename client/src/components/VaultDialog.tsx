@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getErc2612PermitTypedData, getSeraWithdrawTypedData, parseTokenAmount, type Eip712Domain } from "../../../shared/wallet";
+import { isSeraSettlementTerminal } from "../../../shared/sera";
 import { trpc } from "@/lib/trpc";
 import { getTransactionReceipt, signBuiltTransaction, signTypedData, type UnsignedEip1559Transaction } from "@/lib/walletClient";
 import { Check, Loader2, ShieldCheck } from "lucide-react";
@@ -184,8 +185,7 @@ export function VaultDialog({ address, open, onOpenChange, tokens, onSubmitted }
       setSettlementDetail("Sera activity refreshed; settlement for this transaction has not been reported yet. Check again shortly.");
       return;
     }
-    const status = matching.status.toLowerCase();
-    const terminal = ["settled", "filled", "completed", "complete", "success"].some(value => status.includes(value));
+    const terminal = isSeraSettlementTerminal(matching.status);
     setStage(terminal ? "settled" : "submitted");
     setSettlementDetail(`Sera activity status: ${matching.status}.`);
   };
