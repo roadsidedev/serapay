@@ -1,0 +1,3 @@
+ALTER TABLE "user_mini_app_states" ADD CONSTRAINT "user_mini_app_states_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_mini_app_states" ADD CONSTRAINT "user_mini_app_states_mini_app_id_mini_apps_id_fk" FOREIGN KEY ("mini_app_id") REFERENCES "public"."mini_apps"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "user_mini_app_states_user_app_unique" ON "user_mini_app_states" USING btree ("user_id","mini_app_id");

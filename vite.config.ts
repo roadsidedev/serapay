@@ -167,6 +167,14 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("@privy-io")) return "privy";
+          if (id.includes("viem") || id.includes("ox")) return "wallet-crypto";
+        },
+      },
+    },
   },
   server: {
     host: true,

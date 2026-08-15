@@ -34,16 +34,17 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
   const values: InsertUser = { openId: user.openId };
   const updateSet: Record<string, unknown> = {};
-  const textFields = ["name", "email", "loginMethod"] as const;
+  const textFields = ["privyDid", "username", "embeddedWalletAddress", "avatarUrl", "preferredTheme", "name", "email", "loginMethod"] as const;
 
   for (const field of textFields) {
     if (user[field] !== undefined) {
-      values[field] = user[field] ?? null;
-      updateSet[field] = user[field] ?? null;
+      const value = user[field] ?? undefined;
+      values[field] = value as never;
+      updateSet[field] = value;
     }
   }
 
-  values.role = user.role ?? (user.openId === ENV.ownerOpenId ? "admin" : "user");
+  values.role = user.role ?? (user.openId === ENV.ownerOpenId || user.privyDid === ENV.ownerPrivyDid ? "admin" : "user");
   updateSet.role = values.role;
   values.lastSignedIn = user.lastSignedIn ?? new Date();
   updateSet.lastSignedIn = values.lastSignedIn;
@@ -59,5 +60,35 @@ export async function getUserByOpenId(openId: string) {
   }
 
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  return result[0];
+}
+
+export async function getUserByPrivyDid(privyDid: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(users).where(eq(users.privyDid, privyDid)).limit(1);
+  return result[0];
+}
+
+export async function getUserByUsername(username: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+  return result[0];
+}
+
+export async function updateUserProfile(userId: number, profile: Pick<InsertUser, "username" | "name" | "embeddedWalletAddress" | "avatarUrl" | "preferredTheme">) {
+  const db = await getDb();
+  if (!db) throw new Error("Profile storage is unavailable. Configure DATABASE_URL with a Neon Postgres connection string.");
+
+  const result = await db
+    .update(users)
+    .set({ ...profile, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning();
   return result[0];
 }

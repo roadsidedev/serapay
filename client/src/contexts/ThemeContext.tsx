@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { resolveThemePreference, type ThemePreference } from "@shared/themePreference";
 
-type Theme = "light" | "dark";
+type Theme = ThemePreference;
 
 interface ThemeContextType {
   theme: Theme;
+  setTheme?: (theme: Theme) => void;
   toggleTheme?: () => void;
   switchable: boolean;
 }
@@ -24,32 +26,36 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(() => {
     if (switchable) {
       const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
+      return stored === "light" || stored === "dark" || stored === "system" ? stored : defaultTheme;
     }
     return defaultTheme;
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => root.classList.toggle("dark", resolveThemePreference(theme, media.matches) === "dark");
+    applyTheme();
 
     if (switchable) {
       localStorage.setItem("theme", theme);
     }
+
+    if (theme !== "system") return;
+    media.addEventListener("change", applyTheme);
+    return () => media.removeEventListener("change", applyTheme);
   }, [theme, switchable]);
 
   const toggleTheme = switchable
     ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
+        setTheme(prev => (resolveThemePreference(prev, window.matchMedia("(prefers-color-scheme: dark)").matches) === "light" ? "dark" : "light"));
       }
     : undefined;
 
+  const updateTheme = switchable ? setTheme : undefined;
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, setTheme: updateTheme, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );
