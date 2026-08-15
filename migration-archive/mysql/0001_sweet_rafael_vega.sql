@@ -1,0 +1,21 @@
+CREATE TABLE `miniApps` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`submittedByUserId` int NOT NULL,
+	`name` varchar(80) NOT NULL,
+	`description` text NOT NULL,
+	`logoUrl` varchar(2048) NOT NULL,
+	`launchUrl` varchar(2048) NOT NULL,
+	`manifestUrl` varchar(2048) NOT NULL,
+	`developerIdentity` varchar(120) NOT NULL,
+	`category` varchar(32) NOT NULL,
+	`version` varchar(48) NOT NULL,
+	`permissions` json NOT NULL,
+	`supportedCurrencies` json NOT NULL,
+	`status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+	`reviewNote` text,
+	`reviewedByUserId` int,
+	`reviewedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `miniApps_id` PRIMARY KEY(`id`)
+);
