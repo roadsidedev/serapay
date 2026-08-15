@@ -24,4 +24,4 @@
 - [ ] Expand account settings with wallet export and management, theme selection, username profile, activity history, and developer build controls.
 - [ ] Add a developer staging suite for safely previewing and validating a mini-app before publishing it for review.
 - [ ] Implement a premium mobile-first responsive system and companion-app readiness guidance for App Store and Play Store distribution.
-- [ ] Rename the connected GitHub repository to serapay and push the current project source with a descriptive commit.
+- [x] Rename the connected GitHub repository to serapay and push the current project source with a descriptive commit.
