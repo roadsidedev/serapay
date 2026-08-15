@@ -12,7 +12,7 @@ import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { COUNTRY_OPTIONS, CURRENCY_OPTIONS, DEVICE_APPROVAL_OPTIONS, LANGUAGE_OPTIONS, normalizeAccountPreferences } from "@shared/accountPreferences";
 import { normalizeUsername, validateUsername } from "@shared/profile";
-import { Check, Code2, Download, Globe2, History, KeyRound, Palette, ShieldCheck, UserRound } from "lucide-react";
+import { Check, Download, Globe2, History, KeyRound, Palette, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -24,13 +24,9 @@ const themeOptions: Array<{ value: ThemeOption; label: string }> = [
   { value: "system", label: "System" },
 ];
 
-type AccountProfilePanelProps = {
-  address: string | null;
-  onOpenDevConsole?: () => void;
-  onOpenBuild?: () => void;
-};
+type AccountProfilePanelProps = { address: string | null };
 
-export function AccountProfilePanel({ address, onOpenDevConsole, onOpenBuild }: AccountProfilePanelProps) {
+export function AccountProfilePanel({ address }: AccountProfilePanelProps) {
   const { user } = useAuth();
   const { authenticated, configured, exportWallet, login, linkPasskey, enrollPasskeyMfa, usernameSuggestion, displayName, avatarUrl } = useSeraPrivy();
   const { theme, setTheme } = useTheme();
@@ -142,7 +138,6 @@ export function AccountProfilePanel({ address, onOpenDevConsole, onOpenBuild }: 
   };
 
   const usernameStatus = !authenticated ? "Sign in to claim" : !usernameValidity.valid ? usernameValidity.message : normalizedUsername === user?.username ? "Current username" : availability.isFetching ? "Checking availability…" : availability.data?.available ? "Available" : availability.data ? "Taken" : "Choose a username";
-  const openDevConsole = onOpenDevConsole ?? onOpenBuild;
   const identityName = user?.name ?? displayName ?? (username ? `@${username}` : "SeraPay account");
   const initial = identityName.slice(0, 1).toUpperCase();
 
@@ -165,7 +160,7 @@ export function AccountProfilePanel({ address, onOpenDevConsole, onOpenBuild }: 
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"><SectionHeading icon={KeyRound} title="Device approval" copy="Passkeys use your device’s Face Unlock, Touch ID, fingerprint, or screen lock. SeraPay never receives biometric data." /><div className="mt-5 space-y-2"><Button onClick={protectWithPasskey} variant="outline" className="h-10 w-full rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Add or update passkey</Button><Button onClick={enrollWalletMfa} variant="outline" className="h-10 w-full rounded-xl border-white/15 text-white hover:bg-white hover:text-black"><ShieldCheck className="mr-2 h-4 w-4" />Secure wallet approvals</Button></div><p className="mt-3 text-xs leading-5 text-white/45">Passkey is your preferred device approval. Privy enforces the actual signature and transaction challenge once wallet MFA is enabled.</p></section>
-        <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"><SectionHeading icon={Download} title="Wallet export" copy="Recovery and export remain inside Privy’s protected flow. Your private key never enters SeraPay." /><Button onClick={requestWalletExport} variant="outline" className="mt-5 h-10 w-full rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Open secure export</Button>{openDevConsole ? <Button onClick={openDevConsole} variant="ghost" className="mt-2 h-10 w-full rounded-xl text-white/70 hover:bg-white/[0.08] hover:text-white"><Code2 className="mr-2 h-4 w-4" />Open Dev Console</Button> : null}</section>
+        <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"><SectionHeading icon={Download} title="Wallet export" copy="Recovery and export remain inside Privy’s protected flow. Your private key never enters SeraPay." /><Button onClick={requestWalletExport} variant="outline" className="mt-5 h-10 w-full rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Open secure export</Button></section>
       </div>
 
       <details className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"><summary className="flex cursor-pointer list-none items-center gap-3 text-sm font-medium text-white"><span className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white"><History className="h-4 w-4" /></span>Activity history <Badge variant="outline" className="ml-auto border-white/15 text-white/55">Wallet & Sera</Badge></summary><div className="mt-5 border-t border-white/10 pt-5"><ActivityJournal address={address} isAuthenticated={authenticated} /></div></details>

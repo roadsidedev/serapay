@@ -41,3 +41,5 @@
 - [x] Audit and harden all Sera native API routes used by swap and Vault/earn flows against the official contract.
 - [x] Add production readiness tests and safeguards for Sera quote, signing, execution, Vault deposit, withdrawal, and settlement flows.
 - [x] Create an operator-ready deployment package with a single Neon migration SQL script plus Railway and Vercel deployment instructions and environment-variable checklists.
+- [x] Remove the top-navigation passkey component and retain passkey controls exclusively within Account settings.
+- [x] Consolidate duplicate Account developer controls into one coherent Dev Console surface.

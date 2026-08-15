@@ -40,7 +40,6 @@ import {
   Globe2,
   Grid2X2,
   Layers3,
-  KeyRound,
   Loader2,
   LockKeyhole,
   Moon,
@@ -160,7 +159,7 @@ function SideNavigation({ activeView, setActiveView }: { activeView: View; setAc
   );
 }
 
-function TopBar({ address, avatarUrl = null, displayName = null, onConnect, onPasskey, onReceive, isConnecting }: { address: string | null; avatarUrl?: string | null; displayName?: string | null; network?: WalletNetwork; onConnect: () => void; onPasskey: () => void; onReceive: () => void; isConnecting: boolean }) {
+function TopBar({ address, avatarUrl = null, displayName = null, onConnect, onReceive, isConnecting }: { address: string | null; avatarUrl?: string | null; displayName?: string | null; network?: WalletNetwork; onConnect: () => void; onReceive: () => void; isConnecting: boolean }) {
   const { theme, toggleTheme } = useTheme();
   const profileInitial = (displayName ?? address?.slice(2, 3) ?? "S").slice(0, 1).toUpperCase();
   return (
@@ -172,7 +171,7 @@ function TopBar({ address, avatarUrl = null, displayName = null, onConnect, onPa
         {address ? (
           <button onClick={onReceive} aria-label="View wallet receive address" className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-1.5 pl-1.5 pr-3 text-xs font-medium text-white/85 transition hover:bg-white hover:text-black"><span className="grid h-6 w-6 place-items-center overflow-hidden rounded-full bg-white text-[10px] font-black text-black">{avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : profileInitial}</span><span className="hidden sm:inline">{shortenAddress(address)}</span></button>
         ) : (
-          <><Button onClick={onPasskey} variant="outline" className="hidden h-9 rounded-full border-white/15 px-3 text-xs text-white hover:bg-white hover:text-black sm:inline-flex"><KeyRound className="mr-1.5 h-3.5 w-3.5" />Passkey</Button><Button onClick={onConnect} disabled={isConnecting} className="h-9 rounded-full bg-white px-4 text-xs font-semibold text-black hover:bg-white/85">{isConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <WalletCards className="mr-1.5 h-3.5 w-3.5" />} Connect wallet</Button></>
+          <Button onClick={onConnect} disabled={isConnecting} className="h-9 rounded-full bg-white px-4 text-xs font-semibold text-black hover:bg-white/85">{isConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <WalletCards className="mr-1.5 h-3.5 w-3.5" />} Connect wallet</Button>
         )}
       </div>
     </header>
@@ -428,12 +427,12 @@ function SendDialog({ address, open, onOpenChange, tokens, onActivity }: { addre
 }
 
 function AccountView({ address, developerToolsOpen, isAdmin, onCloseDevConsole, onOpenDevConsole }: { address: string | null; developerToolsOpen: boolean; isAdmin: boolean; onCloseDevConsole: () => void; onOpenDevConsole: () => void }) {
-  return <section className="mx-auto max-w-[1050px] space-y-5"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Settings & security</h1><p className="mt-2 text-sm text-white/50">Manage your SeraPay identity, regional experience, wallet security, and developer work.</p></div><AccountProfilePanel address={address} onOpenDevConsole={onOpenDevConsole} />{developerToolsOpen ? <section className="space-y-5 rounded-3xl border border-white/12 bg-white/[0.025] p-4 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Dev Console</p><h2 className="mt-1 text-lg font-semibold text-white">Build, stage, and publish</h2><p className="mt-1 max-w-xl text-sm leading-6 text-white/50">Preview inside a contained wallet shell, validate the manifest, and submit your mini app for review.</p></div><Button variant="outline" onClick={onCloseDevConsole} className="rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Close console</Button></div><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</section> : <button onClick={onOpenDevConsole} className="flex w-full items-center justify-between rounded-2xl border border-dashed border-white/20 bg-white/[0.02] px-5 py-4 text-left transition hover:border-white hover:bg-white/[0.06]"><span><span className="block text-sm font-medium text-white">Dev Console</span><span className="mt-1 block text-xs text-white/50">Build, stage, validate, and submit a mini app.</span></span><Code2 className="h-5 w-5 text-white/75" /></button>}</section>;
+  return <section className="mx-auto max-w-[1050px] space-y-5"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Settings & security</h1><p className="mt-2 text-sm text-white/50">Manage your SeraPay identity, regional experience, wallet security, and developer work.</p></div><AccountProfilePanel address={address} />{developerToolsOpen ? <section className="space-y-5 rounded-3xl border border-white/12 bg-white/[0.025] p-4 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Dev Console</p><h2 className="mt-1 text-lg font-semibold text-white">Build, stage, and publish</h2><p className="mt-1 max-w-xl text-sm leading-6 text-white/50">Preview inside a contained wallet shell, validate the manifest, and submit your mini app for review.</p></div><Button variant="outline" onClick={onCloseDevConsole} className="rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Close console</Button></div><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</section> : <button onClick={onOpenDevConsole} className="flex w-full items-center justify-between rounded-2xl border border-dashed border-white/20 bg-white/[0.02] px-5 py-4 text-left transition hover:border-white hover:bg-white/[0.06]"><span><span className="block text-sm font-medium text-white">Dev Console</span><span className="mt-1 block text-xs text-white/50">Build, stage, validate, and submit a mini app.</span></span><Code2 className="h-5 w-5 text-white/75" /></button>}</section>;
 }
 
 export default function Home() {
   const { user, isAuthenticated: previewAuthenticated } = useAuth();
-  const { authenticated: privyAuthenticated, configured: privyConfigured, login: loginWithPrivy, loginWithPasskey, walletAddress: embeddedWalletAddress, avatarUrl, displayName } = useSeraPrivy();
+  const { authenticated: privyAuthenticated, configured: privyConfigured, login: loginWithPrivy, walletAddress: embeddedWalletAddress, avatarUrl, displayName } = useSeraPrivy();
   const { copy } = useLocale();
   const isAuthenticated = privyConfigured ? privyAuthenticated : previewAuthenticated;
   const [activeView, setActiveView] = useState<View>("wallet");
@@ -459,10 +458,6 @@ export default function Home() {
     }
     try { setConnecting(true); const nextAddress = await connectInjectedWallet(); const chainId = await getWalletChainId(); if (chainId !== "0x1") { toast.error("SeraPay supports Ethereum Mainnet. Switch networks in your wallet and try again."); return; } setAddress(nextAddress); toast.success("Wallet connected", { description: shortenAddress(nextAddress) }); } catch (error) { toast.error(error instanceof Error ? error.message : "Wallet connection failed."); } finally { setConnecting(false); }
   };
-  const connectWithPasskey = async () => {
-    if (!privyConfigured) return toast.error("Configure VITE_PRIVY_APP_ID before enabling passkey sign-in.");
-    try { await loginWithPasskey(); } catch (error) { toast.error(error instanceof Error ? error.message : "Passkey sign-in was not completed."); }
-  };
   const recordActivity = (entry: WalletActivityEntry) => { recordWalletActivity(entry); };
   const openSend = () => setSendOpen(true);
   const isAdmin = user?.role === "admin";
@@ -472,7 +467,7 @@ export default function Home() {
       <div className="flex min-h-screen">
         <SideNavigation activeView={activeView} setActiveView={setActiveView} />
         <div className="min-w-0 flex-1">
-          <TopBar address={address} avatarUrl={avatarUrl} displayName={displayName} onConnect={connectWallet} onPasskey={connectWithPasskey} onReceive={() => setReceiveOpen(true)} isConnecting={connecting} />
+          <TopBar address={address} avatarUrl={avatarUrl} displayName={displayName} onConnect={connectWallet} onReceive={() => setReceiveOpen(true)} isConnecting={connecting} />
           <main className="px-4 py-7 pb-32 sm:px-7 lg:px-10 lg:py-9">
             {tokenQuery.error ? <div className="mb-5 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white/70">Live Sera asset discovery is temporarily unavailable: {tokenQuery.error.message}</div> : null}
             {content}
