@@ -19,7 +19,7 @@
 - [ ] Add the supplied server-only Sera credentials to Railway and verify protected balance, activity, permit, deposit, and withdrawal flows against a connected wallet.
 - [ ] Replace preview-only authentication with Privy social onboarding and a secure production identity boundary.
 - [x] Add a username model derived from the authenticated social identity, with protected availability validation and user-facing account naming.
-- [ ] Redesign the wallet home for mobile-first balance, earn, swap, transfer, FX rates, and inline execution journeys.
+- [x] Redesign the wallet home for mobile-first balance, earn, swap, transfer, FX rates, and inline execution journeys.
 - [x] Expand Explore with published mini-app discovery, favorites, recently visited apps, and user-specific My Mini Apps views.
 - [x] Expand account settings with wallet export and management, theme selection, username profile, activity history, and developer build controls.
 - [x] Add a developer staging suite for safely previewing and validating a mini-app before publishing it for review.
