@@ -9,15 +9,12 @@ type InjectedProvider = {
   request: (request: RequestArguments) => Promise<unknown>;
 };
 
-declare global {
-  interface Window {
-    ethereum?: InjectedProvider;
-  }
-}
+type WalletWindow = Window & { ethereum?: InjectedProvider };
 
 function requireProvider() {
-  if (!window.ethereum) throw new Error("No injected wallet was found. Install or unlock MetaMask, Rabby, or another compatible wallet.");
-  return window.ethereum;
+  const provider = (window as WalletWindow).ethereum;
+  if (!provider) throw new Error("No injected wallet was found. Install or unlock MetaMask, Rabby, or another compatible wallet.");
+  return provider;
 }
 
 export async function connectInjectedWallet() {

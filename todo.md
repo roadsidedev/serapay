@@ -43,3 +43,5 @@
 - [x] Create an operator-ready deployment package with a single Neon migration SQL script plus Railway and Vercel deployment instructions and environment-variable checklists.
 - [x] Remove the top-navigation passkey component and retain passkey controls exclusively within Account settings.
 - [x] Consolidate duplicate Account developer controls into one coherent Dev Console surface.
+- [x] Fix the production frontend blank screen caused by the wallet bundle `forwardRef` runtime error and verify the Vercel artifact loads.
+- [ ] Redeploy the Vercel frontend with the wallet-bundle repair and verify the public site loads without the prior `forwardRef` error; record the verified deployment URL or build identifier.
