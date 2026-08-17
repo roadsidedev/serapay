@@ -61,6 +61,7 @@ export function AccountProfilePanel({ address, mode = "settings" }: AccountProfi
   const { authenticated, configured, exportWallet, login, linkPasskey, enrollPasskeyMfa, usernameSuggestion, displayName, avatarUrl, walletAddress, signTypedData: signPrivyTypedData } = useSeraPrivy();
   const { theme, setTheme } = useTheme();
   const showPreferences = mode === "settings";
+  const showProfile = mode === "profile";
   const { setLanguage } = useLocale();
   const [username, setUsername] = useState(user?.username ?? usernameSuggestion ?? "");
   const [usernameEditing, setUsernameEditing] = useState(false);
@@ -213,26 +214,26 @@ export function AccountProfilePanel({ address, mode = "settings" }: AccountProfi
   };
 
   const identityName = user?.name ?? displayName ?? (username ? `@${username}` : "SeraPay account");
+  const fallbackUsername = identityName.replace(/^@/, "").trim().split(/\s+/)[0].toLowerCase() || "serapay";
   const identityAvatar = resolveMediaUrl(user?.avatarUrl ?? avatarUrl);
   const initial = identityName.slice(0, 1).toUpperCase();
   const usernameStatus = !appAuthenticated ? "Sign in to edit" : !usernameValidity.valid ? usernameValidity.message : normalizedUsername === user?.username ? "Current username" : availability.isFetching ? "Checking availability…" : availability.data?.available ? "Available" : availability.data ? "Taken" : "Choose a username";
 
   return (
     <section className="space-y-4">
-      <section className="liquid-glass rounded-2xl p-3 sm:p-4">
+      {showProfile ? <section className="liquid-glass rounded-2xl p-3 sm:p-4">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => avatarInputRef.current?.click()} className="group relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-[#7161DF]/40 bg-white text-base font-semibold text-black shadow-[0_0_30px_rgba(113,97,223,0.2)]" aria-label="Edit profile photo">
             {identityAvatar ? <img src={identityAvatar} alt="Profile" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : initial}
             <span className="absolute inset-0 grid place-items-center bg-[#7161DF]/85 text-white opacity-0 transition group-hover:opacity-100"><ImagePlus className="h-5 w-5" /></span>
           </button>
           <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadProfileImage} className="sr-only" />
-          <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-white">{identityName}</p></div>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
-          {usernameEditing ? <div className="min-w-0 flex-1"><Input autoFocus value={username} onChange={event => setUsername(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void saveUsername(); if (event.key === "Escape") setUsernameEditing(false); }} onBlur={() => setUsername(normalizedUsername)} className="h-10 border-[#7161DF]/50 bg-black/20 text-sm text-white" aria-label="Username" /><p className={cn("mt-1 text-[11px]", usernameStatus === "Available" || usernameStatus === "Current username" ? "text-[#9b90f5]" : usernameStatus === "Taken" || !usernameValidity.valid ? "text-red-300" : "text-white/45")}>{usernameStatus}</p></div> : <p className="truncate text-sm font-medium text-white/75">@{username || "serapay"}</p>}
+          <div className="min-w-0 flex-1">
+            {usernameEditing ? <><Input autoFocus value={username} onChange={event => setUsername(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void saveUsername(); if (event.key === "Escape") setUsernameEditing(false); }} className="h-10 border-[#7161DF]/50 bg-black/20 text-sm text-white" aria-label="Username" /><p className={cn("mt-1 text-[11px]", usernameStatus === "Available" || usernameStatus === "Current username" ? "text-[#9b90f5]" : usernameStatus === "Taken" || !usernameValidity.valid ? "text-red-300" : "text-white/45")}>{usernameStatus}</p></> : <><p className="truncate text-sm font-semibold text-white">@{username || fallbackUsername}</p>{identityName && identityName.toLowerCase() !== (username || "").toLowerCase() ? <p className="mt-1 truncate text-xs text-white/45">{identityName}</p> : null}</>}
+          </div>
           {usernameEditing ? <Button onClick={() => void saveUsername()} disabled={profileUpdate.isPending || !usernameValidity.valid || Boolean(availability.data && !availability.data.available)} size="sm" className="rounded-xl bg-[#7161DF] text-white hover:bg-[#6656d4]"><Check className="h-4 w-4" />Save</Button> : <Button onClick={() => setUsernameEditing(true)} variant="ghost" size="icon-sm" className="text-white/55 hover:bg-[#7161DF]/15 hover:text-[#b8b0ff]" aria-label="Edit username"><Pencil className="h-4 w-4" /></Button>}
         </div>
-      </section>
+      </section> : null}
 {showPreferences ?
       <section className="liquid-glass rounded-3xl p-4 sm:p-5">
         <SectionHeading icon={Palette} title="Settings and preferences" />
@@ -257,5 +258,5 @@ function Subheading({ icon: Icon, title }: { icon: typeof UserRound; title: stri
 }
 
 function PreferenceSelect({ label, value, options, onChange }: { label: string; value: string; options: Array<{ value: string; label: string }>; onChange: (value: string) => void }) {
-  return <div><Label className="text-xs text-white/65">{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger className="mt-2 h-10 border-white/15 bg-black/20 text-white"><SelectValue /></SelectTrigger><SelectContent className="border-white/15 bg-[#171326] text-white">{options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select></div>;
+  return <div><Label className="text-xs text-foreground/65">{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger className="mt-2 h-10 border-border bg-background/70 text-foreground"><SelectValue /></SelectTrigger><SelectContent className="border-border bg-popover text-popover-foreground">{options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select></div>;
 }
