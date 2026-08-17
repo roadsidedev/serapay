@@ -112,19 +112,7 @@ function formatAmount(value: string | number | undefined, maximumFractionDigits 
 }
 
 function WalletMark({ compact = false }: { compact?: boolean }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-xl bg-white text-black shadow-[0_10px_24px_rgba(255,255,255,0.12)]">
-        <span className="relative z-10 text-base font-black leading-none">S</span><span className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2 bg-black/35" />
-      </div>
-      {!compact ? (
-        <div>
-          <p className="font-semibold tracking-tight text-white">SeraPay</p>
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Experience layer</p>
-        </div>
-      ) : null}
-    </div>
-  );
+  return <div className={cn("font-semibold tracking-tight text-white", compact ? "text-sm" : "px-3")}>SeraPay</div>;
 }
 
 function SideNavigation({ activeView, setActiveView }: { activeView: View; setActiveView: (view: View) => void }) {
@@ -159,7 +147,7 @@ function SideNavigation({ activeView, setActiveView }: { activeView: View; setAc
   );
 }
 
-function TopBar({ address, avatarUrl = null, displayName = null, onConnect, onReceive, isConnecting }: { address: string | null; avatarUrl?: string | null; displayName?: string | null; network?: WalletNetwork; onConnect: () => void; onReceive: () => void; isConnecting: boolean }) {
+function TopBar({ address, signedIn, avatarUrl = null, displayName = null, onSignIn, onSignOut, onReceive, isConnecting }: { address: string | null; signedIn: boolean; avatarUrl?: string | null; displayName?: string | null; network?: WalletNetwork; onSignIn: () => void; onSignOut: () => Promise<void>; onReceive: () => void; isConnecting: boolean }) {
   const { theme, toggleTheme } = useTheme();
   const profileInitial = (displayName ?? address?.slice(2, 3) ?? "S").slice(0, 1).toUpperCase();
   return (
@@ -168,10 +156,10 @@ function TopBar({ address, avatarUrl = null, displayName = null, onConnect, onRe
       <div className="hidden lg:flex items-center gap-2 text-xs text-white/45"><span>SeraPay</span><ChevronRight className="h-3.5 w-3.5" /><span className="text-white/80">Wallet</span></div>
       <div className="flex items-center gap-2 sm:gap-3">
         <button onClick={toggleTheme} aria-label="Toggle color theme" className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-white/70 transition hover:bg-white hover:text-black">{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
-        {address ? (
-          <button onClick={onReceive} aria-label="View wallet receive address" className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-1.5 pl-1.5 pr-3 text-xs font-medium text-white/85 transition hover:bg-white hover:text-black"><span className="grid h-6 w-6 place-items-center overflow-hidden rounded-full bg-white text-[10px] font-black text-black">{avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : profileInitial}</span><span className="hidden sm:inline">{shortenAddress(address)}</span></button>
+        {signedIn ? (
+          <button onClick={() => { if (window.confirm("Sign out of SeraPay?")) void onSignOut(); }} aria-label="Open account sign-out" className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-1.5 pl-1.5 pr-3 text-xs font-medium text-white/85 transition hover:bg-white hover:text-black"><span className="grid h-6 w-6 place-items-center overflow-hidden rounded-full bg-white text-[10px] font-black text-black">{avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : profileInitial}</span><span className="hidden sm:inline">{displayName ?? (address ? shortenAddress(address) : "Account")}</span></button>
         ) : (
-          <Button onClick={onConnect} disabled={isConnecting} className="h-9 rounded-full bg-white px-4 text-xs font-semibold text-black hover:bg-white/85">{isConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <WalletCards className="mr-1.5 h-3.5 w-3.5" />} Connect wallet</Button>
+          <Button onClick={onSignIn} disabled={isConnecting} className="h-9 rounded-full bg-white px-4 text-xs font-semibold text-black hover:bg-white/85">{isConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Sign in</Button>
         )}
       </div>
     </header>
@@ -215,7 +203,6 @@ function WalletHome({ address, setView, onReceive, onSend, onSwap, onVault, bala
 
   return (
     <section className="mx-auto max-w-[1320px] animate-in fade-in duration-300">
-      <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">{copy.wallet}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{copy.stablecoinsOrganized}</h1><p className="mt-2 max-w-xl text-sm leading-6 text-white/50">Balances, vault assets, and trusted Sera actions — while your wallet stays self-custodial.</p></div>
       <div className="mt-7 rounded-3xl border border-white/12 bg-white/[0.035] p-6 sm:p-8">
           <div className="flex items-start justify-between"><div><p className="text-sm text-white/50">Total stablecoin value</p><div className="mt-2 flex items-baseline gap-2"><span className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">${formatAmount(total)}</span><span className="text-xs text-white/40">wallet + vault</span></div></div><Badge variant="outline" className="border-white/15 text-white/70"><ShieldCheck className="mr-1 h-3 w-3" />Self-custodial</Badge></div>
           <div className="mt-9 grid grid-cols-4 gap-2 sm:gap-3">
@@ -228,17 +215,16 @@ function WalletHome({ address, setView, onReceive, onSend, onSwap, onVault, bala
           </div>
       </div>
       <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"><div className="mb-5 flex items-center justify-between"><div><p className="font-medium text-white">Stablecoin balances</p><p className="mt-1 text-xs text-white/45">Wallet assets and Sera Vault positions remain separate.</p></div><Button variant="ghost" onClick={() => setView("account")} className="h-8 text-xs text-white/60 hover:bg-white/[0.08] hover:text-white">Activity <ChevronRight className="ml-1 h-3.5 w-3.5" /></Button></div>{balancesLoading ? <div className="grid place-items-center py-12 text-sm text-white/45"><Loader2 className="mb-2 h-5 w-5 animate-spin text-white" />Loading balances…</div> : <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">{displayAssets.map(asset => <div key={`${asset.symbol}-${asset.tokenAddress}`} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5"><div className="flex items-center gap-3"><TokenGlyph symbol={asset.symbol} size="sm" /><div><p className="text-sm font-medium text-white">{asset.symbol}</p><p className="mt-0.5 text-[11px] text-white/40">{asset.currency} · Vault {formatAmount(asset.vaultAvailable)}</p></div></div><div className="text-right"><p className="font-mono text-sm text-white/85">{formatAmount(asset.walletBalance, 4)}</p><p className="mt-0.5 text-[11px] text-white/40">available</p></div></div>)}</div>}</div>
-      <EarnSurface balances={displayAssets} onVault={onVault} />
       <FxRatesCard />
       {!address ? <div className="mt-5 rounded-2xl border border-dashed border-white/[0.14] bg-white/[0.02] p-4 text-center text-sm text-white/45">Continue with your social account to create a SeraPay wallet and load supported stablecoin balances.</div> : null}
     </section>
   );
 }
 
-function EarnSurface({ balances, onVault }: { balances: Array<{ symbol: string; vaultAvailable: string; walletBalance: string }>; onVault: () => void }) {
+function EarnSurface({ balances }: { balances: Array<{ symbol: string; vaultAvailable: string; walletBalance: string }> }) {
   const vaultValue = balances.reduce((sum, balance) => sum + safeNumber(balance.vaultAvailable), 0);
   const supportedAssets = balances.filter(balance => safeNumber(balance.walletBalance) > 0 || safeNumber(balance.vaultAvailable) > 0).slice(0, 3);
-  return <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/15 bg-white text-black"><CircleDollarSign className="h-5 w-5" /></div><div><div className="flex items-center gap-2"><p className="font-medium text-white">Earn with Sera Vault</p><Badge variant="outline" className="border-white/15 text-white/60">Liquidity</Badge></div><p className="mt-1 max-w-xl text-xs leading-5 text-white/48">Supply supported stablecoins to the Sera Vault. Review the transaction and sign in your wallet before anything moves.</p></div></div><div className="flex items-center justify-between gap-4 sm:justify-end"><div className="text-right"><p className="text-[11px] uppercase tracking-[0.14em] text-white/40">In vault</p><p className="mt-1 text-xl font-semibold text-white">${formatAmount(vaultValue)}</p></div><Button onClick={onVault} className="h-10 rounded-xl bg-white text-black hover:bg-white/85">Open Vault <ChevronRight className="ml-1 h-3.5 w-3.5" /></Button></div></div>{supportedAssets.length ? <div className="mt-5 flex gap-2 overflow-x-auto pb-1">{supportedAssets.map(asset => <div key={asset.symbol} className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"><TokenGlyph symbol={asset.symbol} size="sm" /><span className="text-xs text-white/70">{asset.symbol}</span><span className="font-mono text-xs text-white">{formatAmount(asset.vaultAvailable)}</span></div>)}</div> : <p className="mt-5 text-xs text-white/40">Your eligible wallet assets appear here when a connected wallet is loaded.</p>}</section>;
+  return <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/15 bg-white text-black"><CircleDollarSign className="h-5 w-5" /></div><div><div className="flex items-center gap-2"><p className="font-medium text-white">Earn with Sera Vault</p><Badge variant="outline" className="border-white/15 text-white/60">Liquidity</Badge></div><p className="mt-1 max-w-xl text-xs leading-5 text-white/48">Supply supported stablecoins to the Sera Vault. Review the transaction and sign in your wallet before anything moves.</p></div></div><div className="flex items-center justify-between gap-4 sm:justify-end"><div className="text-right"><p className="text-[11px] uppercase tracking-[0.14em] text-white/40">In vault</p><p className="mt-1 text-xl font-semibold text-white">${formatAmount(vaultValue)}</p></div></div></div>{supportedAssets.length ? <div className="mt-5 flex gap-2 overflow-x-auto pb-1">{supportedAssets.map(asset => <div key={asset.symbol} className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"><TokenGlyph symbol={asset.symbol} size="sm" /><span className="text-xs text-white/70">{asset.symbol}</span><span className="font-mono text-xs text-white">{formatAmount(asset.vaultAvailable)}</span></div>)}</div> : <p className="mt-5 text-xs text-white/40">Your eligible wallet assets appear here when a connected wallet is loaded.</p>}</section>;
 }
 
 function FxRatesCard() {
@@ -427,12 +413,12 @@ function SendDialog({ address, open, onOpenChange, tokens, onActivity }: { addre
 }
 
 function AccountView({ address, developerToolsOpen, isAdmin, onCloseDevConsole, onOpenDevConsole }: { address: string | null; developerToolsOpen: boolean; isAdmin: boolean; onCloseDevConsole: () => void; onOpenDevConsole: () => void }) {
-  return <section className="mx-auto max-w-[1050px] space-y-5"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Settings & security</h1><p className="mt-2 text-sm text-white/50">Manage your SeraPay identity, regional experience, wallet security, and developer work.</p></div><AccountProfilePanel address={address} />{developerToolsOpen ? <section className="space-y-5 rounded-3xl border border-white/12 bg-white/[0.025] p-4 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Dev Console</p><h2 className="mt-1 text-lg font-semibold text-white">Build, stage, and publish</h2><p className="mt-1 max-w-xl text-sm leading-6 text-white/50">Preview inside a contained wallet shell, validate the manifest, and submit your mini app for review.</p></div><Button variant="outline" onClick={onCloseDevConsole} className="rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Close console</Button></div><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</section> : <button onClick={onOpenDevConsole} className="flex w-full items-center justify-between rounded-2xl border border-dashed border-white/20 bg-white/[0.02] px-5 py-4 text-left transition hover:border-white hover:bg-white/[0.06]"><span><span className="block text-sm font-medium text-white">Dev Console</span><span className="mt-1 block text-xs text-white/50">Build, stage, validate, and submit a mini app.</span></span><Code2 className="h-5 w-5 text-white/75" /></button>}</section>;
+  return <section className="mx-auto max-w-[1050px] space-y-5"><header><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Settings</h1></header><AccountProfilePanel address={address} /><section className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-6">{developerToolsOpen ? <div className="space-y-5"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Dev Console</p><h2 className="mt-1 text-lg font-semibold text-white">Build and publish mini apps</h2></div><Button variant="outline" onClick={onCloseDevConsole} className="rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Close</Button></div><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</div> : <button onClick={onOpenDevConsole} className="flex w-full items-center justify-between text-left"><span><span className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Dev Console</span><span className="mt-2 block text-sm font-medium text-white">Build and publish mini apps</span></span><Code2 className="h-5 w-5 text-white/75" /></button>}</section><section className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-6"><div className="flex items-center gap-3"><Activity className="h-4 w-4 text-white/70" /><h2 className="text-sm font-medium text-white">Activity</h2></div><div className="mt-5 border-t border-white/10 pt-5"><ActivityJournal address={address} isAuthenticated={Boolean(address)} /></div></section></section>;
 }
 
 export default function Home() {
-  const { user, isAuthenticated: previewAuthenticated } = useAuth();
-  const { authenticated: privyAuthenticated, configured: privyConfigured, login: loginWithPrivy, walletAddress: embeddedWalletAddress, avatarUrl, displayName } = useSeraPrivy();
+  const { user, isAuthenticated: previewAuthenticated, logout: logoutPreview } = useAuth();
+  const { authenticated: privyAuthenticated, configured: privyConfigured, login: loginWithPrivy, logout: logoutPrivy, walletAddress: embeddedWalletAddress, avatarUrl, displayName } = useSeraPrivy();
   const { copy } = useLocale();
   const isAuthenticated = privyConfigured ? privyAuthenticated : previewAuthenticated;
   const [activeView, setActiveView] = useState<View>("wallet");
@@ -458,18 +444,18 @@ export default function Home() {
     }
     try { setConnecting(true); const nextAddress = await connectInjectedWallet(); const chainId = await getWalletChainId(); if (chainId !== "0x1") { toast.error("SeraPay supports Ethereum Mainnet. Switch networks in your wallet and try again."); return; } setAddress(nextAddress); toast.success("Wallet connected", { description: shortenAddress(nextAddress) }); } catch (error) { toast.error(error instanceof Error ? error.message : "Wallet connection failed."); } finally { setConnecting(false); }
   };
+  const signOut = async () => { if (privyConfigured) await logoutPrivy(); else await logoutPreview(); setAddress(null); };
   const recordActivity = (entry: WalletActivityEntry) => { recordWalletActivity(entry); };
   const openSend = () => setSendOpen(true);
   const isAdmin = user?.role === "admin";
-  const content = activeView === "wallet" ? <WalletHome address={address} setView={setActiveView} onReceive={() => setReceiveOpen(true)} onSend={openSend} onSwap={() => setHomeSwapOpen(true)} onVault={() => setVaultOpen(true)} balances={balancesQuery.data ?? []} balancesLoading={balancesQuery.isLoading} tokens={tokens} /> : activeView === "explore" ? <ExploreLayer onLaunch={app => setMiniApp(app)} onBuild={() => setActiveView("account")} /> : <AccountView address={address} developerToolsOpen={developerToolsOpen} isAdmin={isAdmin} onOpenDevConsole={() => setDeveloperToolsOpen(true)} onCloseDevConsole={() => setDeveloperToolsOpen(false)} />;
+  const content = activeView === "wallet" ? <WalletHome address={address} setView={setActiveView} onReceive={() => setReceiveOpen(true)} onSend={openSend} onSwap={() => setHomeSwapOpen(true)} onVault={() => setVaultOpen(true)} balances={balancesQuery.data ?? []} balancesLoading={balancesQuery.isLoading} tokens={tokens} /> : activeView === "explore" ? <ExploreLayer onLaunch={app => setMiniApp(app)} /> : <AccountView address={address} developerToolsOpen={developerToolsOpen} isAdmin={isAdmin} onOpenDevConsole={() => setDeveloperToolsOpen(true)} onCloseDevConsole={() => setDeveloperToolsOpen(false)} />;
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
         <SideNavigation activeView={activeView} setActiveView={setActiveView} />
         <div className="min-w-0 flex-1">
-          <TopBar address={address} avatarUrl={avatarUrl} displayName={displayName} onConnect={connectWallet} onReceive={() => setReceiveOpen(true)} isConnecting={connecting} />
+          <TopBar address={address} signedIn={isAuthenticated} avatarUrl={avatarUrl ?? user?.avatarUrl} displayName={displayName ?? user?.name} onSignIn={connectWallet} onSignOut={signOut} onReceive={() => setReceiveOpen(true)} isConnecting={connecting} />
           <main className="px-4 py-7 pb-32 sm:px-7 lg:px-10 lg:py-9">
-            {tokenQuery.error ? <div className="mb-5 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white/70">Live Sera asset discovery is temporarily unavailable: {tokenQuery.error.message}</div> : null}
             {content}
           </main>
         </div>

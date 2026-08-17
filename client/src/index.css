@@ -23,7 +23,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-foreground: var(--foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -91,6 +91,17 @@
   }
   .field-input::placeholder { color: var(--muted-foreground); }
   .field-input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+}
+
+@layer utilities {
+  html[data-theme="light"] .bg-black,
+  html[data-theme="light"] [class*="bg-black/"] { background-color: var(--background) !important; }
+  html[data-theme="light"] [class*="bg-white/"] { background-color: color-mix(in srgb, var(--foreground) 4%, transparent) !important; }
+  html[data-theme="light"] .text-white,
+  html[data-theme="light"] [class*="text-white/"] { color: var(--foreground) !important; }
+  html[data-theme="light"] [class*="border-white"] { border-color: color-mix(in srgb, var(--foreground) 14%, transparent) !important; }
+  html[data-theme="light"] .hover\:bg-white:hover { background-color: var(--foreground) !important; }
+  html[data-theme="light"] .hover\:text-black:hover { color: var(--background) !important; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
