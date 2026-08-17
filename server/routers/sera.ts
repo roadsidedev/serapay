@@ -17,6 +17,14 @@ import { assertSeraCredentialEncryptionConfigured, getSeraApiKeyFingerprint } fr
 const walletAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Enter a valid Ethereum address.");
 const rawAmountSchema = z.string().regex(/^\d+$/, "Enter a raw unsigned integer amount.");
 const swapExecutionWindowMs = 30_000;
+const liveFxPairs = [
+  { base: "USD", quote: "EUR" },
+  { base: "USD", quote: "GBP" },
+  { base: "USD", quote: "NGN" },
+  { base: "USD", quote: "SGD" },
+  { base: "USD", quote: "BRL" },
+  { base: "USD", quote: "ZAR" },
+] as const;
 const issuedSwapQuotes = new Map<string, { permitRequired: boolean; expiresAt: number }>();
 const builtTransactionSchema = z.object({
   to: walletAddressSchema,
@@ -120,8 +128,12 @@ async function requestSera(path: string, init: RequestInit = {}, auth?: { userId
 export const seraRouter = router({
   status: publicProcedure.query(() => ({ apiBaseUrl: ENV.seraApiBaseUrl, bootstrapCredentialsConfigured: hasLegacyBootstrapCredentials(), perUserCredentialsEnabled: true })),
   apiKeyStatus: protectedProcedure.input(z.object({ ownerAddress: walletAddressSchema })).query(async ({ ctx, input }) => {
-    const credential = await db.getSeraCredential(ctx.user.id, input.ownerAddress);
-    return { configured: Boolean(credential), fingerprint: credential ? getSeraApiKeyFingerprint(credential.apiKey) : null, lastVerifiedAt: credential?.lastVerifiedAt?.toISOString() ?? null };
+    try {
+      const credential = await db.getSeraCredential(ctx.user.id, input.ownerAddress);
+      return { configured: Boolean(credential), fingerprint: credential ? getSeraApiKeyFingerprint(credential.apiKey) : null, lastVerifiedAt: credential?.lastVerifiedAt?.toISOString() ?? null };
+    } catch {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sera access storage is unavailable. Apply the latest SeraPay database migration, then try again." });
+    }
   }),
   createApiKey: protectedProcedure.input(z.object({ ownerAddress: walletAddressSchema, timestamp: z.number().int().positive(), signature: z.string().regex(/^0x[a-fA-F0-9]+$/), label: z.string().trim().min(1).max(80).default("SeraPay wallet") })).mutation(async ({ ctx, input }) => {
     const ownerAddress = getOwnerAddressOrThrow(input.ownerAddress);
@@ -152,6 +164,16 @@ export const seraRouter = router({
   systemTime: publicProcedure.query(() => requestSera("/system/time")),
   tokens: publicProcedure.query(() => requestSera("/tokens")),
   markets: publicProcedure.query(() => requestSera("/markets")),
+  fxRates: publicProcedure.query(async () => {
+    const results = await Promise.allSettled(liveFxPairs.map(async pair => {
+      const response = await requestSera(`/fx/rate?base=${pair.base}&quote=${pair.quote}`) as { pair?: string; rate?: string | number; as_of?: number; rate_24h_ago?: string | number | null; change_pct?: string | number | null };
+      if (response.rate === undefined || response.rate === null) throw new Error(`No live rate returned for ${pair.base}/${pair.quote}.`);
+      return { pair: response.pair ?? `${pair.base}/${pair.quote}`, rate: String(response.rate), asOf: response.as_of ?? null, rate24hAgo: response.rate_24h_ago == null ? null : String(response.rate_24h_ago), changePct: response.change_pct == null ? null : String(response.change_pct) };
+    }));
+    const rates = results.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
+    if (!rates.length) throw new TRPCError({ code: "BAD_GATEWAY", message: "Live Sera FX rates are temporarily unavailable. Try again shortly." });
+    return { rates, fetchedAt: Math.floor(Date.now() / 1000), source: "Sera /fx/rate" };
+  }),
   config: publicProcedure.query(() => requestSera("/config")),
   quote: publicProcedure
     .input(

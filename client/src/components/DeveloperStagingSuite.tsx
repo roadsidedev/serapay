@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { isStagingMiniAppUrl } from "@shared/staging";
-import { Code2, ExternalLink, Laptop, ShieldCheck, WalletCards } from "lucide-react";
+import { ChevronDown, Code2, ExternalLink, Laptop, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const simulatorContext = {
@@ -22,44 +22,27 @@ const simulatorContext = {
 export function DeveloperStagingSuite() {
   const [enabled, setEnabled] = useState(() => localStorage.getItem("serapay-dev-mode") === "true");
   const [url, setUrl] = useState(() => localStorage.getItem("serapay-staging-url") ?? "http://localhost:5173");
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const frame = useRef<HTMLIFrameElement>(null);
   const isValid = isStagingMiniAppUrl(url);
   const previewUrl = useMemo(() => isValid ? url.trim() : "", [isValid, url]);
 
-  useEffect(() => {
-    localStorage.setItem("serapay-dev-mode", String(enabled));
-  }, [enabled]);
+  useEffect(() => { localStorage.setItem("serapay-dev-mode", String(enabled)); }, [enabled]);
+  useEffect(() => { localStorage.setItem("serapay-staging-url", url); }, [url]);
 
-  useEffect(() => {
-    localStorage.setItem("serapay-staging-url", url);
-  }, [url]);
+  const sendSimulatorContext = () => frame.current?.contentWindow?.postMessage(simulatorContext, "*");
 
-  const sendSimulatorContext = () => {
-    frame.current?.contentWindow?.postMessage(simulatorContext, "*");
-  };
+  return <section className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-6">
+    <header className="flex items-start gap-3">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Code2 className="h-4 w-4" /></span>
+      <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="text-base font-semibold text-white">Contained preview</h2><Badge variant="outline" className={cn("border-white/15 text-[10px]", enabled ? "bg-[#7161DF]/15 text-[#b8b0ff]" : "text-white/50")}>{enabled ? "Dev mode on" : "Dev mode off"}</Badge></div><p className="mt-1.5 text-sm leading-5 text-white/50">Test your mini app inside a restricted wallet shell before submitting it for review.</p></div><Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable developer staging mode" />
+    </header>
 
-  return (
-    <section className="rounded-2xl border border-white/10 bg-black/20 p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2"><Code2 className="h-4 w-4 text-white" /><p className="text-sm font-medium text-white">Contained preview</p></div>
-          <p className="mt-1 max-w-2xl text-xs leading-5 text-white/45">Preview your mini-app in a contained wallet shell before submitting it for review. Only isolated simulation data is sent to the preview; no connected wallet or Privy credentials are exposed.</p>
-        </div>
-        <div className="flex items-center gap-2"><Badge variant="outline" className={cn("border-white/15", enabled ? "bg-white text-black" : "text-white/50")}>{enabled ? "Dev mode on" : "Dev mode off"}</Badge><Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable developer staging mode" /></div>
-      </div>
-
-      {enabled ? <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
-          <label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/42" htmlFor="staging-url">Mini-app preview URL</label>
-          <div className="mt-2 flex gap-2"><Input id="staging-url" value={url} onChange={event => setUrl(event.target.value)} placeholder="http://localhost:5173" className="h-10 border-white/15 bg-white/[0.04] text-sm text-white placeholder:text-white/25" /><Button asChild variant="outline" className="h-10 shrink-0 border-white/15 bg-transparent px-3 text-white/70 hover:bg-white hover:text-black"><a href={previewUrl || undefined} target="_blank" rel="noreferrer" aria-disabled={!previewUrl}><ExternalLink className="h-3.5 w-3.5" /></a></Button></div>
-          <p className={cn("mt-2 text-xs", isValid ? "text-white/38" : "text-amber-200/80")}>{isValid ? "HTTPS URLs and local loopback HTTP URLs are supported." : "Use https:// for remote previews, or http://localhost / 127.0.0.1 for local development."}</p>
-          {previewUrl ? <div className="mt-4 overflow-hidden rounded-xl border border-white/[0.08] bg-black"><iframe ref={frame} title="Mini-app staging preview" src={previewUrl} sandbox="allow-scripts allow-forms" onLoad={sendSimulatorContext} className="h-[430px] w-full bg-white" /></div> : <div className="mt-4 grid h-[220px] place-items-center rounded-xl border border-dashed border-white/[0.12] bg-black/15 text-center"><Laptop className="h-5 w-5 text-white/30" /><p className="-mt-10 text-xs text-white/40">Enter a safe preview URL to launch the contained simulator.</p></div>}
-        </div>
-        <aside className="space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><WalletCards className="h-4 w-4 text-white" /><p className="mt-3 text-sm font-medium text-white">Simulation contract</p><p className="mt-1 text-xs leading-5 text-white/48">The frame receives a <code className="text-white">serapay:staging-context</code> message after load with a labelled test address, chain ID, and test USDC balance.</p><Button onClick={sendSimulatorContext} variant="outline" className="mt-4 h-9 w-full border-white/15 bg-transparent text-xs text-white/70 hover:bg-white hover:text-black">Resend test context</Button></div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"><ShieldCheck className="h-4 w-4 text-white" /><p className="mt-3 text-sm font-medium text-white">Boundary by design</p><p className="mt-1 text-xs leading-5 text-white/48">Preview frames run in a restricted sandbox. Production release still requires manifest validation and owner approval.</p></div>
-        </aside>
-      </div> : <div className="mt-5 rounded-2xl border border-dashed border-white/[0.12] bg-white/[0.02] px-4 py-7 text-center"><Laptop className="mx-auto h-5 w-5 text-white/28" /><p className="mt-2 text-sm text-white/55">Turn on Dev Mode to stage a local or HTTPS mini-app preview.</p></div>}
-    </section>
-  );
+    {enabled ? <div className="mt-5 space-y-4">
+      <div><label className="text-sm font-medium text-white/80" htmlFor="staging-url">Preview URL</label><p className="mt-1 text-xs leading-5 text-white/45">Use HTTPS for remote previews, or localhost for development.</p><div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"><Input id="staging-url" value={url} onChange={event => setUrl(event.target.value)} placeholder="http://localhost:5173" className="field-input h-11 min-w-0 w-full" /><Button asChild variant="outline" disabled={!previewUrl} className="h-11 border-white/15 text-white hover:bg-[#7161DF]/15 hover:text-white"><a href={previewUrl || "#"} target="_blank" rel="noreferrer" aria-disabled={!previewUrl}><ExternalLink className="mr-2 h-4 w-4" />Open preview</a></Button></div><p className={cn("mt-2 text-xs", isValid ? "text-emerald-200/75" : "text-amber-200/80")} role="status">{isValid ? "Safe preview URL" : "Enter a valid HTTPS or local loopback URL."}</p></div>
+      {previewUrl ? <div className="overflow-hidden rounded-2xl border border-white/10 bg-white p-1"><iframe ref={frame} title="Mini-app staging preview" src={previewUrl} sandbox="allow-scripts allow-forms" onLoad={sendSimulatorContext} className="h-[min(52vh,420px)] w-full rounded-xl bg-white" /></div> : <div className="grid min-h-48 place-items-center rounded-2xl border border-dashed border-white/15 bg-black/15 px-5 text-center"><div><Laptop className="mx-auto h-5 w-5 text-white/35" /><p className="mt-3 text-sm text-white/55">Your contained preview will appear here.</p><p className="mt-1 text-xs text-white/40">Enter a safe URL above to launch the simulator.</p></div></div>}
+      <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/[0.025] p-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#b8b0ff]" /><p className="text-xs leading-5 text-white/55">Only labelled simulation data is sent. Connected wallet credentials never enter the preview.</p></div><Button onClick={sendSimulatorContext} disabled={!previewUrl} variant="outline" className="min-h-10 shrink-0 border-white/15 text-white hover:bg-[#7161DF]/15 hover:text-white"><RefreshCw className="mr-2 h-4 w-4" />Resend context</Button></div>
+      <div className="rounded-2xl border border-white/10 bg-black/20"><button type="button" onClick={() => setDetailsOpen(open => !open)} aria-expanded={detailsOpen} className="flex min-h-11 w-full items-center justify-between px-3 text-left text-sm font-medium text-white/75"><span>How staging is isolated</span><ChevronDown className={`h-4 w-4 text-white/50 transition-transform ${detailsOpen ? "rotate-180" : ""}`} /></button>{detailsOpen ? <div className="border-t border-white/10 px-3 pb-3 pt-2 text-xs leading-5 text-white/45">The frame runs in a restricted sandbox with a labelled test address, Ethereum Mainnet chain ID, and test USDC balance. Production release still requires manifest validation and owner approval.</div> : null}</div>
+    </div> : <div className="mt-5 grid min-h-32 place-items-center rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-5 text-center"><div><Laptop className="mx-auto h-5 w-5 text-white/30" /><p className="mt-2 text-sm text-white/55">Turn on Dev Mode to stage a local or HTTPS mini-app preview.</p></div></div>}
+  </section>;
 }

@@ -24,7 +24,7 @@ const themeOptions: Array<{ value: ThemeOption; label: string }> = [
   { value: "system", label: "System" },
 ];
 
-type AccountProfilePanelProps = { address: string | null };
+type AccountProfilePanelProps = { address: string | null; mode?: "profile" | "settings" };
 
 function prepareAvatarDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -56,10 +56,11 @@ function prepareAvatarDataUrl(file: File) {
   });
 }
 
-export function AccountProfilePanel({ address }: AccountProfilePanelProps) {
+export function AccountProfilePanel({ address, mode = "settings" }: AccountProfilePanelProps) {
   const { user, isAuthenticated: previewAuthenticated } = useAuth();
   const { authenticated, configured, exportWallet, login, linkPasskey, enrollPasskeyMfa, usernameSuggestion, displayName, avatarUrl, walletAddress, signTypedData: signPrivyTypedData } = useSeraPrivy();
   const { theme, setTheme } = useTheme();
+  const showPreferences = mode === "settings";
   const { setLanguage } = useLocale();
   const [username, setUsername] = useState(user?.username ?? usernameSuggestion ?? "");
   const [usernameEditing, setUsernameEditing] = useState(false);
@@ -218,31 +219,31 @@ export function AccountProfilePanel({ address }: AccountProfilePanelProps) {
 
   return (
     <section className="space-y-4">
-      <section className="liquid-glass rounded-3xl p-4 sm:p-5">
-        <div className="flex items-center gap-4">
-          <button type="button" onClick={() => avatarInputRef.current?.click()} className="group relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-[22px] border border-[#7161DF]/40 bg-white text-lg font-semibold text-black shadow-[0_0_30px_rgba(113,97,223,0.2)]" aria-label="Edit profile photo">
+      <section className="liquid-glass rounded-2xl p-3 sm:p-4">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={() => avatarInputRef.current?.click()} className="group relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-[#7161DF]/40 bg-white text-base font-semibold text-black shadow-[0_0_30px_rgba(113,97,223,0.2)]" aria-label="Edit profile photo">
             {identityAvatar ? <img src={identityAvatar} alt="Profile" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : initial}
             <span className="absolute inset-0 grid place-items-center bg-[#7161DF]/85 text-white opacity-0 transition group-hover:opacity-100"><ImagePlus className="h-5 w-5" /></span>
           </button>
           <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadProfileImage} className="sr-only" />
-          <div className="min-w-0 flex-1"><p className="truncate text-base font-semibold text-white">{identityName}</p><p className="mt-1 text-xs text-white/45">Tap the photo to change it.</p></div>
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-white">{identityName}</p></div>
         </div>
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
           {usernameEditing ? <div className="min-w-0 flex-1"><Input autoFocus value={username} onChange={event => setUsername(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void saveUsername(); if (event.key === "Escape") setUsernameEditing(false); }} onBlur={() => setUsername(normalizedUsername)} className="h-10 border-[#7161DF]/50 bg-black/20 text-sm text-white" aria-label="Username" /><p className={cn("mt-1 text-[11px]", usernameStatus === "Available" || usernameStatus === "Current username" ? "text-[#9b90f5]" : usernameStatus === "Taken" || !usernameValidity.valid ? "text-red-300" : "text-white/45")}>{usernameStatus}</p></div> : <p className="truncate text-sm font-medium text-white/75">@{username || "serapay"}</p>}
           {usernameEditing ? <Button onClick={() => void saveUsername()} disabled={profileUpdate.isPending || !usernameValidity.valid || Boolean(availability.data && !availability.data.available)} size="sm" className="rounded-xl bg-[#7161DF] text-white hover:bg-[#6656d4]"><Check className="h-4 w-4" />Save</Button> : <Button onClick={() => setUsernameEditing(true)} variant="ghost" size="icon-sm" className="text-white/55 hover:bg-[#7161DF]/15 hover:text-[#b8b0ff]" aria-label="Edit username"><Pencil className="h-4 w-4" /></Button>}
         </div>
       </section>
-
+{showPreferences ?
       <section className="liquid-glass rounded-3xl p-4 sm:p-5">
         <SectionHeading icon={Palette} title="Settings and preferences" />
         <div className="mt-5 space-y-5">
           <div><Subheading icon={Globe2} title="Regional preferences" /><div className="mt-3 grid gap-3 sm:grid-cols-3"><PreferenceSelect label="Country or region" value={preferences.countryCode} onChange={countryCode => { const country = COUNTRY_OPTIONS.find(option => option.code === countryCode); void savePreference({ ...preferences, countryCode, preferredCurrency: country?.currency ?? preferences.preferredCurrency }); }} options={COUNTRY_OPTIONS.map(option => ({ value: option.code, label: option.label }))} /><PreferenceSelect label="Default currency" value={preferences.preferredCurrency} onChange={preferredCurrency => void savePreference({ ...preferences, preferredCurrency })} options={CURRENCY_OPTIONS.map(value => ({ value, label: value }))} /><PreferenceSelect label="Language" value={preferences.preferredLanguage} onChange={preferredLanguage => void savePreference({ ...preferences, preferredLanguage })} options={LANGUAGE_OPTIONS.map(option => ({ value: option.code, label: option.label }))} /></div></div>
           <div className="border-t border-white/10 pt-5"><Subheading icon={Palette} title="Appearance" /><div className="mt-3 grid grid-cols-3 gap-2">{themeOptions.map(option => <button key={option.value} onClick={() => void selectTheme(option.value)} className={cn("rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition", theme === option.value ? "border-[#7161DF] bg-[#7161DF] text-white shadow-[0_0_22px_rgba(113,97,223,0.2)]" : "border-white/12 text-white/60 hover:border-[#7161DF]/50 hover:text-white")}>{option.label}</button>)}</div></div>
-          <div className="border-t border-white/10 pt-5"><Subheading icon={KeyRound} title="Sera access" /><p className="mt-2 text-xs leading-5 text-white/50">Protected wallet balances and activity use a server-encrypted key for this wallet.</p><div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">{seraKeyStatus.data?.configured ? <><span className="text-xs text-[#b8b0ff]">Connected · {seraKeyStatus.data.fingerprint}</span><Button onClick={revokeSeraAccess} disabled={seraKeyBusy} variant="outline" className="h-9 rounded-xl border-white/15 text-white hover:bg-[#7161DF] hover:text-white">Revoke access</Button></> : <Button onClick={provisionSeraApiKey} disabled={seraKeyBusy || !ownerAddress} className="h-9 rounded-xl bg-[#7161DF] text-white hover:bg-[#6656d4]">{seraKeyBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}Enable Sera access</Button>}</div></div>
+          <div className="border-t border-white/10 pt-5"><Subheading icon={KeyRound} title="Sera access" /><p className="mt-2 text-xs leading-5 text-white/50">Protected wallet balances and activity use a server-encrypted key for this wallet.</p><div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">{seraKeyStatus.error ? <div className="flex items-start gap-2 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-3 text-xs leading-5 text-amber-100/85" role="status"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /><span>Sera access storage needs the latest production database migration before this wallet can be enabled.</span></div> : seraKeyStatus.data?.configured ? <><span className="text-xs text-[#b8b0ff]">Connected · {seraKeyStatus.data.fingerprint}</span><Button onClick={revokeSeraAccess} disabled={seraKeyBusy} variant="outline" className="h-9 rounded-xl border-white/15 text-white hover:bg-[#7161DF] hover:text-white">Revoke access</Button></> : <Button onClick={provisionSeraApiKey} disabled={seraKeyBusy || !ownerAddress} className="h-9 rounded-xl bg-[#7161DF] text-white hover:bg-[#6656d4]">{seraKeyBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}Enable Sera access</Button>}</div></div>
           <div className="border-t border-white/10 pt-5"><Subheading icon={ShieldCheck} title="Device approval" /><div className="mt-3 grid gap-2 sm:grid-cols-2"><Button onClick={protectWithPasskey} variant="outline" className="h-9 rounded-xl border-white/15 text-white hover:bg-[#7161DF] hover:text-white">Add or update passkey</Button><Button onClick={enrollWalletMfa} variant="outline" className="h-9 rounded-xl border-white/15 text-white hover:bg-[#7161DF] hover:text-white"><ShieldCheck className="h-4 w-4" />Secure approvals</Button></div></div>
           <div className="border-t border-white/10 pt-5"><Subheading icon={Download} title="Wallet export" /><Button onClick={requestWalletExport} variant="outline" className="mt-3 h-9 w-full rounded-xl border-white/15 text-white hover:bg-[#7161DF] hover:text-white sm:w-auto">Open secure export</Button></div>
         </div>
-      </section>
+      </section> : null}
     </section>
   );
 }

@@ -9,6 +9,7 @@ import { VaultDialog } from "@/components/VaultDialog";
 import { ProfilePreferences } from "@/components/ProfilePreferences";
 import { ExploreLayer } from "@/components/ExploreLayer";
 import { DeveloperStagingSuite } from "@/components/DeveloperStagingSuite";
+import { DeveloperSubmission } from "@/components/DeveloperSubmission";
 import { AccountProfilePanel } from "@/components/AccountProfilePanel";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,6 @@ import { trpc } from "@/lib/trpc";
 import { resolveMediaUrl } from "@/lib/media";
 import { createWalletActivityEntry, readWalletActivity, recordWalletActivity, type WalletActivityEntry } from "@/lib/walletActivity";
 import { connectInjectedWallet, getWalletChainId, sendErc20Transaction, signSeraSwap, signTypedData } from "@/lib/walletClient";
-import { miniAppCategories, miniAppPermissions, type MiniAppPermission } from "../../../shared/miniApps";
 import { encodeErc20Transfer, parseTokenAmount, type SeraSwapIntent } from "../../../shared/wallet";
 import { CORE_NAVIGATION, type CoreView } from "../../../shared/coreNavigation";
 import { isSeraQuoteUsable, isSeraSettlementTerminal } from "../../../shared/sera";
@@ -62,7 +62,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type View = CoreView;
@@ -115,6 +115,20 @@ function formatAmount(value: string | number | undefined, maximumFractionDigits 
   return new Intl.NumberFormat("en-US", { maximumFractionDigits }).format(safeNumber(value));
 }
 
+function getTimeGreeting(date = new Date()) {
+  const hour = date.getHours();
+  if (hour < 5) return "Good night";
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  if (hour < 22) return "Good evening";
+  return "Good night";
+}
+
+function getFirstName(displayName: string | null | undefined) {
+  const normalized = displayName?.replace(/^@/, "").trim();
+  return normalized ? normalized.split(/\s+/)[0] : "there";
+}
+
 function WalletMark({ compact = false }: { compact?: boolean }) {
   return <div className={cn("font-semibold tracking-tight text-white", compact ? "text-sm" : "px-3")}>SeraPay</div>;
 }
@@ -143,10 +157,6 @@ function SideNavigation({ activeView, setActiveView }: { activeView: View; setAc
           );
         })}
       </nav>
-      <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.03] p-3.5">
-        <div className="flex items-center gap-2 text-xs font-medium text-white"><Sparkles className="h-3.5 w-3.5" /> Built on Sera</div>
-        <p className="mt-2 text-xs leading-5 text-white/45">A focused stablecoin experience for Ethereum Mainnet.</p>
-      </div>
     </aside>
   );
 }
@@ -200,14 +210,17 @@ function TokenGlyph({ symbol, size = "md" }: { symbol: string; size?: "sm" | "md
   return <span className={cn("grid shrink-0 place-items-center rounded-full border border-white/15 bg-white font-bold text-black", size === "sm" ? "h-7 w-7 text-[10px]" : "h-10 w-10 text-xs")}>{symbol.slice(0, 2)}</span>;
 }
 
-function WalletHome({ address, setView, onReceive, onSend, onSwap, onVault, balances, balancesLoading, tokens }: { address: string | null; network?: WalletNetwork; serverReadReady?: boolean; setView: (view: View) => void; onReceive: () => void; onSend: () => void; onSwap: () => void; onVault: () => void; balances: Array<{ symbol: string; currency: string; tokenAddress: string; walletBalance: string; vaultAvailable: string; vaultFrozen: string }>; balancesLoading: boolean; tokens: SeraToken[] }) {
+function WalletHome({ address, displayName, setView, onReceive, onSend, onSwap, onVault, balances, balancesLoading, tokens }: { address: string | null; displayName?: string | null; network?: WalletNetwork; serverReadReady?: boolean; setView: (view: View) => void; onReceive: () => void; onSend: () => void; onSwap: () => void; onVault: () => void; balances: Array<{ symbol: string; currency: string; tokenAddress: string; walletBalance: string; vaultAvailable: string; vaultFrozen: string }>; balancesLoading: boolean; tokens: SeraToken[] }) {
   const { copy } = useLocale();
+  const greeting = getTimeGreeting();
+  const firstName = getFirstName(displayName);
   const total = balances.reduce((sum, balance) => sum + safeNumber(balance.walletBalance) + safeNumber(balance.vaultAvailable), 0);
   const displayAssets = balances.length ? balances : tokens.slice(0, 6).map(token => ({ symbol: token.symbol, currency: token.currency, tokenAddress: token.address, walletBalance: "0", vaultAvailable: "0", vaultFrozen: "0" }));
 
   return (
     <section className="mx-auto max-w-[1320px] animate-in fade-in duration-300">
-      <div className="liquid-glass mt-7 rounded-3xl p-6 sm:p-8">
+      <div className="mb-5"><p className="text-sm font-medium text-[#b8b0ff]">{greeting}, {firstName}</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Welcome to your wallet</h1></div>
+      <div className="liquid-glass rounded-3xl p-6 sm:p-8">
           <div className="flex items-start justify-between"><div><p className="text-sm text-white/50">Total stablecoin value</p><div className="mt-2 flex items-baseline gap-2"><span className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">${formatAmount(total)}</span><span className="text-xs text-white/40">wallet + vault</span></div></div><Badge variant="outline" className="border-white/15 text-white/70"><ShieldCheck className="mr-1 h-3 w-3" />Self-custodial</Badge></div>
           <div className="mt-9 grid grid-cols-4 gap-2 sm:gap-3">
             {[
@@ -232,13 +245,12 @@ function EarnSurface({ balances }: { balances: Array<{ symbol: string; vaultAvai
 }
 
 function FxRatesCard() {
-  const marketsQuery = trpc.sera.markets.useQuery(undefined, { retry: 1, refetchInterval: 5000, refetchIntervalInBackground: true });
-  const markets = ((marketsQuery.data as { markets?: Array<Record<string, unknown>> } | undefined)?.markets ?? []).slice(0, 6);
-  const getMarketLabel = (market: Record<string, unknown>) => String(market.symbol ?? market.name ?? market.market ?? `${market.base_currency ?? market.base ?? "—"}/${market.quote_currency ?? market.quote ?? "—"}`);
-  const getMarketRate = (market: Record<string, unknown>) => market.price ?? market.rate ?? market.mid_price ?? market.last_price ?? null;
-
-  const updatedAt = marketsQuery.dataUpdatedAt ? new Date(marketsQuery.dataUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : null;
-  return <section className="liquid-glass mt-5 rounded-3xl p-5 sm:p-6"><div className="flex items-center justify-between"><div><p className="font-medium text-white">Live FX exchange rates</p><p className="mt-1 text-xs text-white/45">Streaming from Sera markets.</p></div><div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-[#b8b0ff]"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#7161DF]" />Live{updatedAt ? ` · ${updatedAt}` : ""}</div></div>{marketsQuery.isLoading ? <div className="grid place-items-center py-8 text-xs text-white/50"><Loader2 className="mb-2 h-4 w-4 animate-spin text-white" />Reading markets…</div> : marketsQuery.error ? <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-red-300/20 bg-red-300/[0.06] p-3 text-xs leading-5 text-white/70" role="status" aria-live="polite"><p>Live market data is temporarily unavailable.</p><button type="button" onClick={() => marketsQuery.refetch()} className="w-fit rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white transition hover:border-[#7161DF]/60 hover:bg-[#7161DF]/15">Try again</button></div> : !markets.length ? <p className="mt-5 text-xs leading-5 text-white/45">No published Sera FX markets are available yet.</p> : <div className="mt-5 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">{markets.map((market, index) => <div key={`${getMarketLabel(market)}-${index}`} className="min-w-[168px] snap-start rounded-2xl border border-white/10 bg-black/20 px-4 py-3 sm:min-w-0"><div className="flex items-center justify-between"><span className="text-sm font-medium text-white">{getMarketLabel(market)}</span><span className="text-[10px] uppercase tracking-wide text-white/45">Live</span></div><p className="mt-2 font-mono text-base text-white">{getMarketRate(market) === null ? "—" : String(getMarketRate(market))}</p></div>)}</div>}</section>;
+  const ratesQuery = trpc.sera.fxRates.useQuery(undefined, { retry: 1, refetchInterval: 5000, refetchIntervalInBackground: true });
+  const rates = ratesQuery.data?.rates ?? [];
+  const updatedAt = ratesQuery.dataUpdatedAt ? new Date(ratesQuery.dataUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : null;
+  const formatRate = (value: string) => { const numeric = Number(value); return Number.isFinite(numeric) ? new Intl.NumberFormat("en-US", { maximumFractionDigits: 6 }).format(numeric) : value; };
+  const formatChange = (value: string | null) => { if (value === null) return null; const numeric = Number(value); return Number.isFinite(numeric) ? `${numeric >= 0 ? "+" : ""}${numeric.toFixed(2)}%` : value; };
+  return <section className="liquid-glass mt-5 rounded-3xl p-5 sm:p-6"><div className="flex items-center justify-between"><div><p className="font-medium text-white">Live FX exchange rates</p><p className="mt-1 text-xs text-white/45">Live Sera provider rates, refreshed continuously.</p></div><div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-[#b8b0ff]"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#7161DF]" />Live{updatedAt ? ` · ${updatedAt}` : ""}</div></div>{ratesQuery.isLoading ? <div className="grid place-items-center py-8 text-xs text-white/50"><Loader2 className="mb-2 h-4 w-4 animate-spin text-white" />Reading live rates…</div> : ratesQuery.error ? <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-red-300/20 bg-red-300/[0.06] p-3 text-xs leading-5 text-white/70" role="status" aria-live="polite"><p>Live Sera rates are temporarily unavailable.</p><button type="button" onClick={() => ratesQuery.refetch()} className="w-fit rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white transition hover:border-[#7161DF]/60 hover:bg-[#7161DF]/15">Try again</button></div> : !rates.length ? <p className="mt-5 text-xs leading-5 text-white/45">No live FX coverage is available right now.</p> : <div className="mt-5 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">{rates.map(rate => { const change = formatChange(rate.changePct); return <div key={rate.pair} className="min-w-[168px] snap-start rounded-2xl border border-white/10 bg-black/20 px-4 py-3 sm:min-w-0"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium text-white">{rate.pair}</span><span className="text-[10px] uppercase tracking-wide text-white/45">Sera</span></div><p className="mt-2 font-mono text-base text-white">{formatRate(rate.rate)}</p>{change ? <p className={`mt-1 text-[11px] ${change.startsWith("-") ? "text-red-200/75" : "text-emerald-200/75"}`}>{change} · 24h</p> : null}</div>; })}</div>}</section>;
 }
 
 
@@ -348,50 +360,6 @@ function MiniAppLaunchDialog({ app, open, onOpenChange }: { app: { name: string;
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="h-[min(760px,90vh)] max-w-4xl overflow-hidden border-white/15 bg-black p-0 text-white"><div className="flex items-center justify-between border-b border-white/10 px-5 py-4"><div><p className="text-sm font-medium">{app?.name}</p><p className="mt-1 text-xs text-white/45">Contained mini-app session · {app?.permissions.join(", ")}</p></div><Badge variant="outline" className="border-white/15 text-white/70">Wallet bridge active</Badge></div><div className="h-[calc(100%-73px)] bg-black p-3"><iframe title={app?.name ?? "Mini app"} sandbox="allow-scripts allow-forms" className="h-full w-full rounded-xl border border-white/10 bg-black" src={app?.source === "sandbox" ? undefined : app?.launchUrl} srcDoc={app?.source === "sandbox" ? sandboxSource : undefined} /></div></DialogContent></Dialog>;
 }
 
-function DeveloperSubmission() {
-  const { authenticated: isAuthenticated, configured, login } = useSeraPrivy();
-  const [permissions, setPermissions] = useState<MiniAppPermission[]>(["wallet.read"]);
-  const [category, setCategory] = useState<(typeof miniAppCategories)[number]>("Utilities");
-  const [readiness, setReadiness] = useState<"idle" | "ready" | "needs-attention">("idle");
-  const submission = trpc.miniApps.submit.useMutation({ onSuccess: () => toast.success("Mini app submitted for owner review.") });
-  const draftValidation = trpc.miniApps.validateDraft.useMutation();
-  const buildDraft = (form: HTMLFormElement) => {
-    const data = new FormData(form);
-    return {
-      name: String(data.get("name") ?? ""), description: String(data.get("description") ?? ""), logoUrl: String(data.get("logoUrl") ?? ""), launchUrl: String(data.get("launchUrl") ?? ""), manifestUrl: String(data.get("manifestUrl") ?? ""), developerIdentity: String(data.get("developerIdentity") ?? ""), version: String(data.get("version") ?? ""), category, permissions, supportedCurrencies: String(data.get("supportedCurrencies") ?? "").split(",").map(value => value.trim().toUpperCase()).filter(Boolean),
-    };
-  };
-  const validateDraft = async (form: HTMLFormElement) => {
-    if (!form.reportValidity()) return;
-    if (!isAuthenticated) {
-      if (configured) login(); else toast.error("Set VITE_PRIVY_APP_ID to enable social onboarding.");
-      return;
-    }
-    try {
-      await draftValidation.mutateAsync(buildDraft(form));
-      setReadiness("ready");
-      toast.success("Draft validated: URLs, manifest, metadata, and permissions are ready for review.");
-    } catch (error) {
-      setReadiness("needs-attention");
-      toast.error(error instanceof Error ? error.message : "Draft validation failed.");
-    }
-  };
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!isAuthenticated) {
-      if (configured) login(); else toast.error("Set VITE_PRIVY_APP_ID to enable social onboarding.");
-      return;
-    }
-    try {
-      await submission.mutateAsync(buildDraft(event.currentTarget));
-      event.currentTarget.reset();
-      setPermissions(["wallet.read"]);
-      setReadiness("idle");
-    } catch (error) { toast.error(error instanceof Error ? error.message : "The submission could not be saved."); }
-  };
-  const togglePermission = (permission: MiniAppPermission) => setPermissions(current => current.includes(permission) ? current.filter(item => item !== permission) : [...current, permission]);
-  return <section className="rounded-2xl border border-white/10 bg-black/20 p-5 sm:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Submission</p><h2 className="mt-2 text-xl font-semibold text-white">Publish a mini app</h2><p className="mt-2 max-w-xl text-sm leading-6 text-white/50">Validate reachability, manifest metadata, and requested wallet permissions before owner review.</p></div><Code2 className="h-5 w-5 text-white" /></div><form onSubmit={submit} className="mt-6 grid gap-4 md:grid-cols-2"><Field label="App name"><Input name="name" required placeholder="Utility desk" className="field-input" /></Field><Field label="Developer identity"><Input name="developerIdentity" required placeholder="Example Labs" className="field-input" /></Field><Field label="Launch URL"><Input name="launchUrl" required type="url" placeholder="https://app.example.com" className="field-input" /></Field><Field label="Manifest URL"><Input name="manifestUrl" required type="url" placeholder="https://app.example.com/manifest.json" className="field-input" /></Field><Field label="Logo URL"><Input name="logoUrl" required type="url" placeholder="https://app.example.com/logo.svg" className="field-input" /></Field><Field label="Version"><Input name="version" required placeholder="1.0.0" pattern="^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$" className="field-input" /></Field><Field label="Category"><Select value={category} onValueChange={value => setCategory(value as typeof category)}><SelectTrigger className="field-input"><SelectValue /></SelectTrigger><SelectContent>{miniAppCategories.map(item => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select></Field><Field label="Supported currencies"><Input name="supportedCurrencies" required placeholder="USD, NGN, EUR" className="field-input" /></Field><Field label="Description" className="md:col-span-2"><Textarea name="description" required minLength={20} maxLength={500} placeholder="Explain the real user task your mini app solves." className="min-h-24 border-white/15 bg-black/30 text-white placeholder:text-white/25" /></Field><div className="md:col-span-2"><Label className="text-xs text-white/60">Requested wallet permissions</Label><div className="mt-3 flex flex-wrap gap-2">{miniAppPermissions.map(permission => <button type="button" key={permission} onClick={() => { setReadiness("idle"); togglePermission(permission); }} className={cn("rounded-full border px-3 py-1.5 text-xs transition", permissions.includes(permission) ? "border-white bg-white text-black" : "border-white/15 text-white/55 hover:border-white/40 hover:text-white")}>{permissions.includes(permission) ? <Check className="mr-1 inline h-3 w-3" /> : null}{permission}</button>)}</div></div><div className="mt-2 flex flex-col justify-between gap-4 border-t border-white/10 pt-5 md:col-span-2 md:flex-row md:items-center"><p className={cn("max-w-xl text-xs leading-5", readiness === "ready" ? "text-white" : readiness === "needs-attention" ? "text-white/70" : "text-white/45")}>{readiness === "ready" ? "Ready to submit: the current draft passed reachability and manifest validation." : readiness === "needs-attention" ? "Needs attention: update the draft and run validation again before submission." : "Sensitive wallet operations require explicit user approval in the host wallet. App code does not receive private keys or seed phrases."}</p><div className="flex shrink-0 gap-2"><Button type="button" onClick={event => { const form = event.currentTarget.form; if (form) validateDraft(form); }} disabled={draftValidation.isPending} variant="outline" className="h-10 border-white/15 text-white hover:bg-white hover:text-black">{draftValidation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}Validate draft</Button><Button type="submit" disabled={submission.isPending} className="h-10 rounded-xl bg-white text-black hover:bg-white/85">{submission.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileCheck2 className="mr-2 h-4 w-4" />}{isAuthenticated ? "Submit for review" : "Sign in to submit"}</Button></div></div></form></section>;
-}
 
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) { return <div className={className}><Label className="text-xs text-white/52">{label}</Label><div className="mt-2">{children}</div></div>; }
 
@@ -417,10 +385,11 @@ function SendDialog({ address, open, onOpenChange, tokens, onActivity }: { addre
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-md border-white/15 bg-black text-white"><DialogHeader><DialogTitle>Send stablecoin</DialogTitle><DialogDescription className="text-white/50">Review the asset, recipient, and amount before your wallet broadcasts the ERC-20 transfer.</DialogDescription></DialogHeader><div className="space-y-4 pt-2"><Field label="Asset"><Select value={selected?.address} onValueChange={setTokenAddress}><SelectTrigger className="field-input"><SelectValue /></SelectTrigger><SelectContent>{tokens.map(token => <SelectItem key={token.address} value={token.address}>{token.symbol} · {token.currency}</SelectItem>)}</SelectContent></Select></Field><Field label="Recipient"><Input value={recipient} onChange={event => setRecipient(event.target.value)} placeholder="0x…" className="field-input font-mono" /></Field><Field label="Amount"><Input value={amount} onChange={event => setAmount(event.target.value)} inputMode="decimal" placeholder="0.00" className="field-input" /></Field><div className="rounded-xl border border-white/15 bg-white/[0.04] p-3 text-xs leading-5 text-white/65"><ShieldCheck className="mr-1 inline h-3.5 w-3.5" />This action asks your wallet to broadcast a standard ERC-20 transfer. Confirm the destination and amount in your wallet before approving.</div><Button onClick={submit} disabled={submitting || !tokens.length} className="h-11 w-full rounded-xl bg-white text-black hover:bg-white/85">{submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Review & broadcast</Button></div></DialogContent></Dialog>;
 }
 
-function AccountView({ address, isAdmin }: { address: string | null; isAdmin: boolean }) {
+function AccountView({ address, isAdmin, isAuthenticated }: { address: string | null; isAdmin: boolean; isAuthenticated: boolean }) {
   const [tab, setTab] = useState<"settings" | "dev" | "activity">("settings");
+  const seraKeyStatus = trpc.sera.apiKeyStatus.useQuery({ ownerAddress: address ?? "0x0000000000000000000000000000000000000000" }, { enabled: Boolean(address && isAuthenticated), retry: false });
   const tabs = [{ id: "settings", label: "Settings", icon: Settings2 }, { id: "dev", label: "Dev console", icon: Code2 }, { id: "activity", label: "Activity", icon: Activity }] as const;
-  return <section className="mx-auto max-w-[1050px] space-y-5"><header><div className="flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9b90f5]">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Your account</h1></div><span className="grid h-11 w-11 place-items-center rounded-2xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><CircleUserRound className="h-5 w-5" /></span></div></header><div className="glass-control flex w-full gap-1 rounded-2xl p-1" role="tablist" aria-label="Account sections">{tabs.map(item => { const Icon = item.icon; return <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-2 text-xs font-medium transition", tab === item.id ? "bg-[#7161DF] text-white shadow-[0_8px_22px_rgba(113,97,223,0.28)]" : "text-white/55 hover:text-white")}><Icon className="h-4 w-4" />{item.label}</button>; })}</div>{tab === "settings" ? <AccountProfilePanel address={address} /> : null}{tab === "dev" ? <section className="liquid-glass rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Code2 className="h-4 w-4" /></span><div><p className="text-sm font-medium text-white">Build and publish mini apps</p><p className="mt-1 text-xs text-white/45">Developer tools for your mini-app workflow.</p></div></div><div className="space-y-5"><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</div></section> : null}{tab === "activity" ? <section className="liquid-glass rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Activity className="h-4 w-4" /></span><p className="text-sm font-medium text-white">Activity</p></div><ActivityJournal address={address} isAuthenticated={Boolean(address)} /></section> : null}</section>;
+  return <section className="mx-auto max-w-[1050px] space-y-5"><header><div className="flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9b90f5]">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Your account</h1></div><span className="grid h-11 w-11 place-items-center rounded-2xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><CircleUserRound className="h-5 w-5" /></span></div></header><div className="mb-1"><AccountProfilePanel address={address} /></div><div className="glass-control flex w-full gap-1 rounded-2xl p-1" role="tablist" aria-label="Account sections">{tabs.map(item => { const Icon = item.icon; return <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-2 text-xs font-medium transition", tab === item.id ? "bg-[#7161DF] text-white shadow-[0_8px_22px_rgba(113,97,223,0.28)]" : "text-white/55 hover:text-white")}><Icon className="h-4 w-4" />{item.label}</button>; })}</div>{tab === "dev" ? <section className="liquid-glass rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Code2 className="h-4 w-4" /></span><div><p className="text-sm font-medium text-white">Build and publish mini apps</p><p className="mt-1 text-xs text-white/45">Developer tools for your mini-app workflow.</p></div></div><div className="space-y-5"><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</div></section> : null}{tab === "activity" ? <section className="liquid-glass rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Activity className="h-4 w-4" /></span><p className="text-sm font-medium text-white">Activity</p></div><ActivityJournal address={address} isAuthenticated={isAuthenticated} seraConfigured={Boolean(seraKeyStatus.data?.configured)} seraStatusError={Boolean(seraKeyStatus.error)} /></section> : null}</section>;
 }
 
 export default function Home() {
@@ -454,7 +423,7 @@ export default function Home() {
   const recordActivity = (entry: WalletActivityEntry) => { recordWalletActivity(entry); };
   const openSend = () => setSendOpen(true);
   const isAdmin = user?.role === "admin";
-  const content = activeView === "wallet" ? <WalletHome address={address} setView={setActiveView} onReceive={() => setReceiveOpen(true)} onSend={openSend} onSwap={() => setHomeSwapOpen(true)} onVault={() => setVaultOpen(true)} balances={balancesQuery.data ?? []} balancesLoading={balancesQuery.isLoading} tokens={tokens} /> : activeView === "explore" ? <ExploreLayer onLaunch={app => setMiniApp(app)} /> : <AccountView address={address} isAdmin={isAdmin} />;
+  const content = activeView === "wallet" ? <WalletHome address={address} displayName={displayName ?? user?.name ?? user?.username} setView={setActiveView} onReceive={() => setReceiveOpen(true)} onSend={openSend} onSwap={() => setHomeSwapOpen(true)} onVault={() => setVaultOpen(true)} balances={balancesQuery.data ?? []} balancesLoading={balancesQuery.isLoading} tokens={tokens} /> : activeView === "explore" ? <ExploreLayer onLaunch={app => setMiniApp(app)} /> : <AccountView address={address} isAdmin={isAdmin} isAuthenticated={isAuthenticated} />;
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
