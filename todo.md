@@ -9,14 +9,14 @@
 - [x] Build mini-app discovery and an iframe-contained launch experience.
 - [x] Add server-side mini-app manifest fetching and schema validation to the developer submission workflow.
 - [x] Build an owner-only review panel for approval and rejection of app submissions.
-- [x] Complete wallet settings with profile preferences and a secure non-secret Sera read-access descriptor.
+- [x] Complete wallet settings with profile preferences and per-user Sera API-key provisioning, encrypted server-side storage, and non-secret key status.
 - [x] Add owner-authorization and remaining client-utility tests for critical flows.
 - [x] Verify keyboard traversal and visible focus states across wallet, swap, settings, and modal controls; document the observed results.
 - [x] Replace MySQL-specific persistence code with Neon/Postgres Drizzle configuration and migrations.
 - [x] Prepare a Railway-friendly backend deployment boundary and environment-variable contract.
 - [x] Prepare a Vercel-friendly frontend deployment boundary, public environment contract, and CORS configuration.
 - [ ] Configure a production authentication provider compatible with Railway and Vercel, then bootstrap the SeraPay owner role in Neon.
-- [ ] Add the supplied server-only Sera credentials to Railway and verify protected balance, activity, permit, deposit, and withdrawal flows against a connected wallet.
+- [ ] Configure `SERA_CREDENTIAL_ENCRYPTION_KEY` on Railway, enable per-user Sera access, and verify protected balance, activity, permit, deposit, and withdrawal flows against a connected wallet.
 - [ ] Replace preview-only authentication with Privy social onboarding and a secure production identity boundary.
 - [x] Add a username model derived from the authenticated social identity, with protected availability validation and user-facing account naming.
 - [x] Redesign the wallet home for mobile-first balance, earn, swap, transfer, FX rates, and inline execution journeys.
@@ -26,7 +26,7 @@
 - [x] Implement a premium mobile-first responsive system and companion-app readiness guidance for App Store and Play Store distribution.
 - [x] Rename the connected GitHub repository to serapay and push the current project source with a descriptive commit.
 - [x] Keep all Privy, Sera, Neon, Railway, and Vercel configuration environment-driven, with no embedded credentials or deployment-specific values in source code.
-- [ ] Apply the pending Privy profile, mini-app personalization, and account-preference migrations to Neon, then verify username, theme, regional preferences, favorites, and recent-launch persistence with a real Privy-authenticated account.
+- [ ] Apply the pending Neon migrations, including `0005_outstanding_skin`, then verify username, theme, regional preferences, favorites, recent-launch persistence, and per-user Sera credential persistence with a real Privy-authenticated account.
 - [x] Replace the fixed mobile bottom navigation with a floating, safe-area-aware Wallet, Explore, and Account control.
 - [x] Remove Swap and Activity as standalone navigation pages while keeping swap execution embedded in Wallet and activity accessible from Account.
 - [x] Consolidate developer tools and mini-app management into the Account core page without losing owner-review access.

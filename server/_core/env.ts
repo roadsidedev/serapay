@@ -8,4 +8,8 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  seraApiBaseUrl: (process.env.SERA_API_BASE_URL ?? "https://api.sera.cx/api/v1").replace(/\/+$/, ""),
+  seraApiKey: process.env.SERA_API_KEY ?? "",
+  seraApiSecret: process.env.SERA_API_SECRET ?? "",
+  seraCredentialEncryptionKey: process.env.SERA_CREDENTIAL_ENCRYPTION_KEY ?? "",
 };

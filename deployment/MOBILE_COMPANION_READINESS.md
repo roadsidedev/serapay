@@ -19,7 +19,7 @@ The wallet shell was checked at the handset dimensions below with the live devel
 |---|---|---|
 | Capacitor iOS / Android shell | App identity, safe areas, deep links, secure native permissions, biometrics or notifications if later required | Do not move Sera API secrets or Privy server secrets into the native application. |
 | React / Vite client | Wallet UI, Privy social onboarding, embedded-wallet interactions, typed-data signing, mini-app shell | Keep `VITE_API_BASE_URL` and `VITE_PRIVY_APP_ID` environment-driven at build time. |
-| Railway API | Sera server-side adapter, Privy access-token verification, tRPC, Neon access | Configure `DATABASE_URL`, Privy server credentials, Sera credentials, `OWNER_PRIVY_DID`, and `ALLOWED_ORIGIN` only in Railway. |
+| Railway API | Sera server-side adapter, per-user Sera credential encryption, Privy access-token verification, tRPC, Neon access | Configure `DATABASE_URL`, Privy server credentials, `SERA_CREDENTIAL_ENCRYPTION_KEY`, `OWNER_PRIVY_DID`, and `ALLOWED_ORIGIN` only in Railway. |
 | Neon | User identity, handles, preferences, mini-app registry, favorite/recent state | Apply the pending Postgres migrations before enabling profile and personalization persistence in production. |
 
 > **Key boundary:** The wallet-export control opens Privy’s protected SDK flow. SeraPay does not receive or store wallet private keys, seed phrases, or recovery material.
@@ -41,7 +41,7 @@ The following gates should be complete before any store submission. They are int
 |---|---|---|
 | Apply `0001_black_wallow.sql`, `0002_messy_charles_xavier.sql`, and `0003_cute_shiva.sql` to production Neon with a direct Postgres connection | Platform owner | Pending |
 | Add `VITE_PRIVY_APP_ID` to Vercel and `PRIVY_APP_ID`, `PRIVY_APP_SECRET`, and `OWNER_PRIVY_DID` to Railway | Platform owner | Pending |
-| Add `SERA_API_KEY` and `SERA_API_SECRET` to Railway; verify protected reads and execution flows with a real wallet | Platform owner | Pending |
+| Add `SERA_CREDENTIAL_ENCRYPTION_KEY` to Railway; enable per-user Sera access and verify protected reads and execution flows with a real wallet | Platform owner | Pending |
 | Set the production Vercel domain in Railway `ALLOWED_ORIGIN` and Privy’s allow-list / redirect configuration | Platform owner | Pending |
 | Create native privacy disclosures, support URL, account-deletion support process, app icons, splash assets, and store metadata | Product / compliance owner | Pending |
 | Test production authentication, profile persistence, favorites, and recent launches after the Neon migration | Engineering / QA | Pending |

@@ -28,6 +28,24 @@ type SeraBalanceResponse = {
 };
 
 export const SERA_API_BASE_URL = "https://api.sera.cx/api/v1";
+export const SERA_MAINNET_ADDRESS = "0xB5C50C5D5f038404F85970b7f5B7259C4AC0E198";
+
+const SERA_API_KEY_TYPES = {
+  ManageApiKey: [
+    { name: "owner", type: "address" },
+    { name: "action", type: "string" },
+    { name: "timestamp", type: "uint256" },
+  ],
+} as const;
+
+export function getSeraApiKeyManagementTypedData(owner: string, timestamp: number, domain?: { chainId?: number; verifyingContract?: string }) {
+  return {
+    domain: { name: "Sera", version: "1", chainId: domain?.chainId ?? 1, verifyingContract: domain?.verifyingContract ?? SERA_MAINNET_ADDRESS },
+    types: SERA_API_KEY_TYPES,
+    primaryType: "ManageApiKey" as const,
+    message: { owner, action: "create", timestamp },
+  };
+}
 
 export function buildSeraAuthorizationHeader(apiKey: string, apiSecret: string) {
   return `Bearer ${apiKey}:${apiSecret}`;

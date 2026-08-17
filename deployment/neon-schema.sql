@@ -36,3 +36,16 @@ CREATE TABLE IF NOT EXISTS mini_apps (
 );
 
 CREATE INDEX IF NOT EXISTS mini_apps_status_reviewed_at_idx ON mini_apps (status, reviewed_at DESC);
+
+CREATE TABLE IF NOT EXISTS sera_api_credentials (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  owner_address VARCHAR(42) NOT NULL,
+  api_key VARCHAR(128) NOT NULL UNIQUE,
+  encrypted_api_secret TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_verified_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ,
+  UNIQUE (user_id, owner_address)
+);

@@ -24,6 +24,21 @@ export const users = pgTable("users", {
   lastSignedIn: timestamp("last_signed_in", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const seraApiCredentials = pgTable("sera_api_credentials", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  ownerAddress: varchar("owner_address", { length: 42 }).notNull(),
+  apiKey: varchar("api_key", { length: 128 }).notNull(),
+  encryptedApiSecret: text("encrypted_api_secret").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+}, table => [
+  uniqueIndex("sera_api_credentials_user_owner_unique").on(table.userId, table.ownerAddress),
+  uniqueIndex("sera_api_credentials_api_key_unique").on(table.apiKey),
+]);
+
 export const miniApps = pgTable("mini_apps", {
   id: serial("id").primaryKey(),
   submittedByUserId: integer("submitted_by_user_id").notNull(),
@@ -58,6 +73,8 @@ export const userMiniAppStates = pgTable("user_mini_app_states", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type SeraApiCredential = typeof seraApiCredentials.$inferSelect;
+export type InsertSeraApiCredential = typeof seraApiCredentials.$inferInsert;
 export type MiniApp = typeof miniApps.$inferSelect;
 export type InsertMiniApp = typeof miniApps.$inferInsert;
 export type UserMiniAppState = typeof userMiniAppStates.$inferSelect;

@@ -1,7 +1,7 @@
-import { createContext, type ReactNode, useContext, useEffect, useMemo } from "react";
 import { PrivyProvider, useExportWallet, useLinkWithPasskey, useLoginWithPasskey, useMfaEnrollment, usePrivy, useWallets } from "@privy-io/react-auth";
 import { setPrivyAccessTokenProvider } from "@/lib/privyAccessToken";
 import { deriveUsernameSuggestion } from "@shared/usernameSuggestion";
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 
 type SeraPrivySession = {
   configured: boolean;
@@ -18,6 +18,7 @@ type SeraPrivySession = {
   enrollPasskeyMfa: () => Promise<void>;
   logout: () => Promise<void>;
   exportWallet: () => Promise<void>;
+  signTypedData: ((address: string, typedData: unknown) => Promise<string>) | null;
 };
 
 type LinkedAccountWithProfile = {
@@ -54,6 +55,7 @@ const unavailableSession: SeraPrivySession = {
   enrollPasskeyMfa: async () => undefined,
   logout: async () => undefined,
   exportWallet: async () => undefined,
+  signTypedData: null,
 };
 
 const SeraPrivyContext = createContext<SeraPrivySession>(unavailableSession);
@@ -71,6 +73,15 @@ function PrivySessionBridge({ children }: { children: ReactNode }) {
     return () => setPrivyAccessTokenProvider(null);
   }, [getAccessToken]);
 
+  const signTypedData = useCallback(async (address: string, typedData: unknown) => {
+    const wallet = wallets.find(candidate => candidate.address.toLowerCase() === address.toLowerCase()) ?? wallets[0];
+    if (!wallet) throw new Error("Privy has not created an Ethereum wallet for this account yet.");
+    const provider = await wallet.getEthereumProvider();
+    const signature = await provider.request({ method: "eth_signTypedData_v4", params: [address, JSON.stringify(typedData)] });
+    if (typeof signature !== "string") throw new Error("Privy did not return a wallet signature.");
+    return signature;
+  }, [wallets]);
+
   const presentation = deriveProfilePresentation(user);
   const session = useMemo<SeraPrivySession>(() => ({
     configured: true,
@@ -87,7 +98,8 @@ function PrivySessionBridge({ children }: { children: ReactNode }) {
     enrollPasskeyMfa: initEnrollmentWithPasskey,
     logout,
     exportWallet: () => exportWallet(wallets[0] ? { address: wallets[0].address } : undefined),
-  }), [authenticated, exportWallet, initEnrollmentWithPasskey, linkWithPasskey, login, loginWithPasskey, logout, presentation.avatarUrl, presentation.displayName, ready, user, wallets]);
+    signTypedData,
+  }), [authenticated, exportWallet, initEnrollmentWithPasskey, linkWithPasskey, login, loginWithPasskey, logout, presentation.avatarUrl, presentation.displayName, ready, signTypedData, user, wallets]);
 
   return <SeraPrivyContext.Provider value={session}>{children}</SeraPrivyContext.Provider>;
 }

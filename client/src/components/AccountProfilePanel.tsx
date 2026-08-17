@@ -4,13 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSeraPrivy } from "@/contexts/PrivyContext";
+import { getSeraApiKeyManagementTypedData } from "@shared/sera";
+import { signTypedData as signInjectedTypedData } from "@/lib/walletClient";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLocale } from "@/contexts/LocaleContext";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { COUNTRY_OPTIONS, CURRENCY_OPTIONS, DEVICE_APPROVAL_OPTIONS, LANGUAGE_OPTIONS, normalizeAccountPreferences } from "@shared/accountPreferences";
 import { normalizeUsername, validateUsername } from "@shared/profile";
-import { Download, Globe2, ImagePlus, KeyRound, Palette, ShieldCheck, UserRound } from "lucide-react";
+import { Download, Globe2, ImagePlus, KeyRound, Loader2, Palette, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,8 +27,8 @@ const themeOptions: Array<{ value: ThemeOption; label: string }> = [
 type AccountProfilePanelProps = { address: string | null };
 
 export function AccountProfilePanel({ address }: AccountProfilePanelProps) {
-  const { user } = useAuth();
-  const { authenticated, configured, exportWallet, login, linkPasskey, enrollPasskeyMfa, usernameSuggestion, displayName, avatarUrl } = useSeraPrivy();
+  const { user, isAuthenticated: previewAuthenticated } = useAuth();
+  const { authenticated, configured, exportWallet, login, linkPasskey, enrollPasskeyMfa, usernameSuggestion, displayName, avatarUrl, walletAddress, signTypedData: signPrivyTypedData } = useSeraPrivy();
   const { theme, setTheme } = useTheme();
   const { setLanguage } = useLocale();
   const [username, setUsername] = useState(user?.username ?? "");
@@ -40,11 +42,19 @@ export function AccountProfilePanel({ address }: AccountProfilePanelProps) {
   const normalizedUsername = useMemo(() => normalizeUsername(username), [username]);
   const usernameValidity = validateUsername(normalizedUsername);
   const availability = trpc.profile.usernameAvailability.useQuery({ username: normalizedUsername }, {
-    enabled: authenticated && usernameValidity.valid && normalizedUsername !== user?.username,
+    enabled: (authenticated || previewAuthenticated) && usernameValidity.valid && normalizedUsername !== user?.username,
     retry: false,
   });
   const utils = trpc.useUtils();
   const profileUpdate = trpc.profile.update.useMutation({ onSuccess: () => utils.auth.me.invalidate() });
+  const ownerAddress = address ?? walletAddress;
+  const appAuthenticated = authenticated || previewAuthenticated;
+  const seraConfig = trpc.sera.config.useQuery(undefined, { retry: false });
+  const seraTime = trpc.sera.systemTime.useQuery(undefined, { retry: false });
+  const seraKeyStatus = trpc.sera.apiKeyStatus.useQuery({ ownerAddress: ownerAddress ?? "0x0000000000000000000000000000000000000000" }, { enabled: appAuthenticated && Boolean(ownerAddress), retry: false });
+  const createSeraApiKey = trpc.sera.createApiKey.useMutation({ onSuccess: () => seraKeyStatus.refetch() });
+  const revokeSeraApiKey = trpc.sera.revokeApiKey.useMutation({ onSuccess: () => seraKeyStatus.refetch() });
+  const [seraKeyBusy, setSeraKeyBusy] = useState(false);
 
   useEffect(() => {
     if (user?.username) setUsername(user.username);
@@ -69,10 +79,41 @@ export function AccountProfilePanel({ address }: AccountProfilePanelProps) {
   }, [setTheme, user?.preferredTheme]);
 
   const ensureAuthenticated = () => {
-    if (authenticated) return true;
+    if (authenticated || previewAuthenticated) return true;
     if (configured) login();
     else toast.error("Set VITE_PRIVY_APP_ID to activate secure SeraPay sign-in.");
     return false;
+  };
+
+  const provisionSeraApiKey = async () => {
+    if (!ensureAuthenticated()) return;
+    if (!ownerAddress) return toast.error("Connect an Ethereum wallet before enabling Sera access.");
+    try {
+      setSeraKeyBusy(true);
+      const timestamp = Number((seraTime.data as { timestamp?: number } | undefined)?.timestamp ?? Math.floor(Date.now() / 1000));
+      const config = seraConfig.data as { chain_id?: number; sera_address?: string } | undefined;
+      const typedData = getSeraApiKeyManagementTypedData(ownerAddress, timestamp, { chainId: config?.chain_id, verifyingContract: config?.sera_address });
+      const signature = signPrivyTypedData ? await signPrivyTypedData(ownerAddress, typedData) : await signInjectedTypedData(ownerAddress, typedData);
+      await createSeraApiKey.mutateAsync({ ownerAddress, timestamp, signature, label: "SeraPay wallet" });
+      toast.success("Sera access enabled for this wallet.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sera access could not be enabled.");
+    } finally {
+      setSeraKeyBusy(false);
+    }
+  };
+
+  const revokeSeraAccess = async () => {
+    if (!ownerAddress) return;
+    try {
+      setSeraKeyBusy(true);
+      await revokeSeraApiKey.mutateAsync({ ownerAddress });
+      toast.success("Sera access revoked for this wallet.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sera access could not be revoked.");
+    } finally {
+      setSeraKeyBusy(false);
+    }
   };
 
   const saveUsername = async () => {
@@ -181,6 +222,7 @@ export function AccountProfilePanel({ address }: AccountProfilePanelProps) {
         <div className="mt-6 space-y-6">
           <div><Subheading icon={Globe2} title="Regional preferences" /><div className="mt-4 grid gap-3 sm:grid-cols-3"><PreferenceSelect label="Country or region" value={preferences.countryCode} onChange={countryCode => { const country = COUNTRY_OPTIONS.find(option => option.code === countryCode); void savePreference({ ...preferences, countryCode, preferredCurrency: country?.currency ?? preferences.preferredCurrency }); }} options={COUNTRY_OPTIONS.map(option => ({ value: option.code, label: option.label }))} /><PreferenceSelect label="Default currency" value={preferences.preferredCurrency} onChange={preferredCurrency => void savePreference({ ...preferences, preferredCurrency })} options={CURRENCY_OPTIONS.map(value => ({ value, label: value }))} /><PreferenceSelect label="Language" value={preferences.preferredLanguage} onChange={preferredLanguage => void savePreference({ ...preferences, preferredLanguage })} options={LANGUAGE_OPTIONS.map(option => ({ value: option.code, label: option.label }))} /></div></div>
           <div className="border-t border-white/10 pt-6"><Subheading icon={Palette} title="Appearance" /><div className="mt-4 grid grid-cols-3 gap-2">{themeOptions.map(option => <button key={option.value} onClick={() => void selectTheme(option.value)} className={cn("rounded-xl border px-3 py-3 text-left text-sm font-medium transition", theme === option.value ? "border-white bg-white text-black" : "border-white/12 text-white/60 hover:border-white/35 hover:text-white")}>{option.label}</button>)}</div></div>
+          <div className="border-t border-white/10 pt-6"><Subheading icon={KeyRound} title="Sera access" /><p className="mt-2 text-xs leading-5 text-white/50">Enable protected balances and activity for this wallet. Your API secret stays encrypted on the server.</p><div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">{seraKeyStatus.data?.configured ? <><span className="text-xs text-white/65">Connected · key {seraKeyStatus.data.fingerprint}</span><Button onClick={revokeSeraAccess} disabled={seraKeyBusy} variant="outline" className="h-10 rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Revoke access</Button></> : <Button onClick={provisionSeraApiKey} disabled={seraKeyBusy || !ownerAddress} className="h-10 rounded-xl bg-white text-black hover:bg-white/85">{seraKeyBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}Enable Sera access</Button>}</div></div>
           <div className="border-t border-white/10 pt-6"><Subheading icon={KeyRound} title="Device approval" /><div className="mt-4 grid gap-2 sm:grid-cols-2"><Button onClick={protectWithPasskey} variant="outline" className="h-10 rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Add or update passkey</Button><Button onClick={enrollWalletMfa} variant="outline" className="h-10 rounded-xl border-white/15 text-white hover:bg-white hover:text-black"><ShieldCheck className="mr-2 h-4 w-4" />Secure wallet approvals</Button></div></div>
           <div className="border-t border-white/10 pt-6"><Subheading icon={Download} title="Wallet export" /><Button onClick={requestWalletExport} variant="outline" className="mt-4 h-10 w-full rounded-xl border-white/15 text-white hover:bg-white hover:text-black sm:w-auto">Open secure export</Button></div>
         </div>

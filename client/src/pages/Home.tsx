@@ -432,8 +432,8 @@ export default function Home() {
   const [miniApp, setMiniApp] = useState<{ name: string; launchUrl?: string; source: "sandbox" | "verified"; permissions: string[] } | null>(null);
   const [connecting, setConnecting] = useState(false);
   const tokenQuery = trpc.sera.tokens.useQuery(undefined, { retry: 1 });
-  const statusQuery = trpc.sera.status.useQuery();
-  const balancesQuery = trpc.sera.balances.useQuery(address ?? "", { enabled: Boolean(address && isAuthenticated && statusQuery.data?.readCredentialsConfigured), retry: false });
+  const seraKeyStatus = trpc.sera.apiKeyStatus.useQuery({ ownerAddress: address ?? "0x0000000000000000000000000000000000000000" }, { enabled: Boolean(address && isAuthenticated), retry: false });
+  const balancesQuery = trpc.sera.balances.useQuery(address ?? "", { enabled: Boolean(address && isAuthenticated && seraKeyStatus.data?.configured), retry: false });
   const tokens = useMemo(() => ((tokenQuery.data as { tokens?: SeraToken[] } | undefined)?.tokens ?? []).filter(token => token.address && token.symbol), [tokenQuery.data]);
   useEffect(() => { if (embeddedWalletAddress) setAddress(embeddedWalletAddress); }, [embeddedWalletAddress]);
   const connectWallet = async () => {

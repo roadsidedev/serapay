@@ -1,17 +1,18 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createHash } from "node:crypto";
 import {
   buildSeraAuthorizationHeader,
   normaliseSeraBalances,
   normaliseSeraFills,
   normaliseSeraOrders,
   normaliseSeraReadAddress,
-  SERA_API_BASE_URL,
   toSeraErrorMessage,
   validateSeraSwapExecution,
 } from "../../shared/sera";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import * as db from "../db";
+import { ENV } from "../_core/env";
+import { assertSeraCredentialEncryptionConfigured, getSeraApiKeyFingerprint } from "../seraCredentialCrypto";
 
 const walletAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Enter a valid Ethereum address.");
 const rawAmountSchema = z.string().regex(/^\d+$/, "Enter a raw unsigned integer amount.");
@@ -37,15 +38,20 @@ const withdrawIntentSchema = z.object({
   uuid: rawAmountSchema,
 }).refine(value => value.tokens.length === value.amounts.length, "Every withdrawal token needs an amount.");
 
-function hasReadCredentials() {
-  return Boolean(process.env.SERA_API_KEY && process.env.SERA_API_SECRET);
+function hasLegacyBootstrapCredentials() {
+  return Boolean(ENV.seraApiKey && ENV.seraApiSecret);
 }
 
-function getReadAccessDescriptor() {
-  const apiKey = process.env.SERA_API_KEY;
-  if (!apiKey) return "Not configured";
-  const fingerprint = createHash("sha256").update(apiKey).digest("hex").slice(0, 12);
-  return `Server-managed key · ${fingerprint}`;
+function getOwnerAddressOrThrow(ownerAddress: string | null | undefined) {
+  if (!ownerAddress) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Connect an Ethereum wallet before using Sera account features." });
+  return ownerAddress.toLowerCase();
+}
+
+async function resolveSeraCredentials(auth: { userId: number; ownerAddress: string } | { apiKey: string; apiSecret: string }) {
+  if ("apiKey" in auth) return auth;
+  const credential = await db.getSeraCredential(auth.userId, getOwnerAddressOrThrow(auth.ownerAddress));
+  if (!credential) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Create a Sera API key for this wallet before loading protected Sera data." });
+  return { apiKey: credential.apiKey, apiSecret: db.decryptStoredSeraSecret(credential.encryptedApiSecret), credentialId: credential.id };
 }
 
 function getIssuedSwapQuote(response: unknown, requestedExpiration: number) {
@@ -95,28 +101,55 @@ async function parseResponse(response: Response) {
   return payload;
 }
 
-async function requestSera(path: string, init: RequestInit = {}, needsReadCredentials = false) {
+async function revokeRemoteSeraCredential(credential: { apiKey: string; encryptedApiSecret: string }) {
+  const apiSecret = db.decryptStoredSeraSecret(credential.encryptedApiSecret);
+  await requestSera("/api-keys/self-revoke", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ api_key: credential.apiKey }) }, { apiKey: credential.apiKey, apiSecret });
+}
+
+async function requestSera(path: string, init: RequestInit = {}, auth?: { userId: number; ownerAddress: string } | { apiKey: string; apiSecret: string }) {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-
-  if (needsReadCredentials) {
-    const apiKey = process.env.SERA_API_KEY;
-    const apiSecret = process.env.SERA_API_SECRET;
-    if (!apiKey || !apiSecret) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "Sera read credentials have not been configured on the server.",
-      });
-    }
-    headers.set("Authorization", buildSeraAuthorizationHeader(apiKey, apiSecret));
+  if (auth) {
+    const credentials = await resolveSeraCredentials(auth);
+    headers.set("Authorization", buildSeraAuthorizationHeader(credentials.apiKey, credentials.apiSecret));
   }
-
-  const response = await fetch(`${SERA_API_BASE_URL}${path}`, { ...init, headers });
+  const response = await fetch(`${ENV.seraApiBaseUrl}${path}`, { ...init, headers });
   return parseResponse(response);
 }
 
 export const seraRouter = router({
-  status: publicProcedure.query(() => ({ readCredentialsConfigured: hasReadCredentials(), readAccessDescriptor: getReadAccessDescriptor() })),
+  status: publicProcedure.query(() => ({ apiBaseUrl: ENV.seraApiBaseUrl, bootstrapCredentialsConfigured: hasLegacyBootstrapCredentials(), perUserCredentialsEnabled: true })),
+  apiKeyStatus: protectedProcedure.input(z.object({ ownerAddress: walletAddressSchema })).query(async ({ ctx, input }) => {
+    const credential = await db.getSeraCredential(ctx.user.id, input.ownerAddress);
+    return { configured: Boolean(credential), fingerprint: credential ? getSeraApiKeyFingerprint(credential.apiKey) : null, lastVerifiedAt: credential?.lastVerifiedAt?.toISOString() ?? null };
+  }),
+  createApiKey: protectedProcedure.input(z.object({ ownerAddress: walletAddressSchema, timestamp: z.number().int().positive(), signature: z.string().regex(/^0x[a-fA-F0-9]+$/), label: z.string().trim().min(1).max(80).default("SeraPay wallet") })).mutation(async ({ ctx, input }) => {
+    const ownerAddress = getOwnerAddressOrThrow(input.ownerAddress);
+    const boundAddress = ctx.user.embeddedWalletAddress?.toLowerCase();
+    if (boundAddress && boundAddress !== ownerAddress) throw new TRPCError({ code: "FORBIDDEN", message: "This wallet is not linked to your SeraPay account." });
+    assertSeraCredentialEncryptionConfigured();
+    const previousCredential = await db.getSeraCredential(ctx.user.id, ownerAddress);
+    if (previousCredential) {
+      await revokeRemoteSeraCredential(previousCredential);
+      await db.revokeSeraCredential(ctx.user.id, ownerAddress);
+    }
+    const response = await requestSera("/api-keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ owner_address: ownerAddress, action: "create", timestamp: input.timestamp, signature: input.signature, label: input.label }) });
+    const payload = response as { api_key?: string; api_secret?: string };
+    if (!payload.api_key || !payload.api_secret) throw new TRPCError({ code: "BAD_GATEWAY", message: "Sera did not return a complete API credential pair." });
+    await requestSera("/api-keys/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ api_key: payload.api_key, api_secret: payload.api_secret }) });
+    await db.saveSeraCredential({ userId: ctx.user.id, ownerAddress, apiKey: payload.api_key, apiSecret: payload.api_secret });
+    if (!boundAddress) await db.updateUserProfile(ctx.user.id, { embeddedWalletAddress: ownerAddress });
+    return { configured: true, ownerAddress, fingerprint: getSeraApiKeyFingerprint(payload.api_key) };
+  }),
+  revokeApiKey: protectedProcedure.input(z.object({ ownerAddress: walletAddressSchema })).mutation(async ({ ctx, input }) => {
+    const ownerAddress = getOwnerAddressOrThrow(input.ownerAddress);
+    const credential = await db.getSeraCredential(ctx.user.id, ownerAddress);
+    if (!credential) return { revoked: false };
+    await revokeRemoteSeraCredential(credential);
+    await db.revokeSeraCredential(ctx.user.id, ownerAddress);
+    return { revoked: true };
+  }),
+  systemTime: publicProcedure.query(() => requestSera("/system/time")),
   tokens: publicProcedure.query(() => requestSera("/tokens")),
   markets: publicProcedure.query(() => requestSera("/markets")),
   config: publicProcedure.query(() => requestSera("/config")),
@@ -161,56 +194,56 @@ export const seraRouter = router({
         body: JSON.stringify({ uuid: execution.uuid, signature: execution.signature, ...(execution.permitSignature ? { permit_signature: execution.permitSignature, permit_deadline: execution.permitDeadline } : {}) }),
       });
     }),
-  balances: protectedProcedure.input(walletAddressSchema).query(async ({ input }) => {
-    const response = await requestSera(`/balances?owner_address=${encodeURIComponent(normaliseSeraReadAddress(input))}`, {}, true);
+  balances: protectedProcedure.input(walletAddressSchema).query(async ({ ctx, input }) => {
+    const response = await requestSera(`/balances?owner_address=${encodeURIComponent(normaliseSeraReadAddress(input))}`, {}, { userId: ctx.user.id, ownerAddress: input });
     return normaliseSeraBalances(response as Parameters<typeof normaliseSeraBalances>[0]);
   }),
-  orders: protectedProcedure.input(walletAddressSchema).query(async ({ input }) => {
-    const response = await requestSera(`/orders?owner_address=${encodeURIComponent(normaliseSeraReadAddress(input))}`, {}, true);
+  orders: protectedProcedure.input(walletAddressSchema).query(async ({ ctx, input }) => {
+    const response = await requestSera(`/orders?owner_address=${encodeURIComponent(normaliseSeraReadAddress(input))}`, {}, { userId: ctx.user.id, ownerAddress: input });
     return normaliseSeraOrders(response as Parameters<typeof normaliseSeraOrders>[0]);
   }),
   orderByRouteUuid: protectedProcedure
     .input(z.object({ walletAddress: walletAddressSchema, uuid: z.string().min(1).max(128) }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const query = new URLSearchParams({ owner_address: normaliseSeraReadAddress(input.walletAddress), uuid: input.uuid });
-      const response = await requestSera(`/orders?${query.toString()}`, {}, true);
+      const response = await requestSera(`/orders?${query.toString()}`, {}, { userId: ctx.user.id, ownerAddress: input.walletAddress });
       return normaliseSeraOrders(response as Parameters<typeof normaliseSeraOrders>[0]);
     }),
-  fills: protectedProcedure.input(walletAddressSchema).query(async ({ input }) => {
-    const response = await requestSera(`/fills?owner_address=${encodeURIComponent(normaliseSeraReadAddress(input))}`, {}, true);
+  fills: protectedProcedure.input(walletAddressSchema).query(async ({ ctx, input }) => {
+    const response = await requestSera(`/fills?owner_address=${encodeURIComponent(normaliseSeraReadAddress(input))}`, {}, { userId: ctx.user.id, ownerAddress: input });
     return normaliseSeraFills(response as Parameters<typeof normaliseSeraFills>[0]);
   }),
-  activity: protectedProcedure.input(walletAddressSchema).query(async ({ input }) => {
+  activity: protectedProcedure.input(walletAddressSchema).query(async ({ ctx, input }) => {
     const query = `owner_address=${encodeURIComponent(normaliseSeraReadAddress(input))}`;
     const [orders, fills] = await Promise.all([
-      requestSera(`/orders?${query}`, {}, true),
-      requestSera(`/fills?${query}`, {}, true),
+      requestSera(`/orders?${query}`, {}, { userId: ctx.user.id, ownerAddress: input }),
+      requestSera(`/fills?${query}`, {}, { userId: ctx.user.id, ownerAddress: input }),
     ]);
     return {
       orders: normaliseSeraOrders(orders as Parameters<typeof normaliseSeraOrders>[0]),
       fills: normaliseSeraFills(fills as Parameters<typeof normaliseSeraFills>[0]),
     };
   }),
-  permitMetadata: protectedProcedure.input(z.object({ walletAddress: walletAddressSchema, tokenAddress: walletAddressSchema })).query(({ input }) =>
+  permitMetadata: protectedProcedure.input(z.object({ walletAddress: walletAddressSchema, tokenAddress: walletAddressSchema })).query(({ ctx, input }) =>
     requestSera(
       `/permit/metadata?owner_address=${encodeURIComponent(normaliseSeraReadAddress(input.walletAddress))}&token_address=${encodeURIComponent(input.tokenAddress)}`,
       {},
-      true,
+      { userId: ctx.user.id, ownerAddress: input.walletAddress },
     ),
   ),
   buildApprove: protectedProcedure
     .input(z.object({ token: walletAddressSchema, owner: walletAddressSchema, spender: walletAddressSchema, amount: rawAmountSchema }))
-    .mutation(({ input }) => requestSera("/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }, true)),
+    .mutation(({ ctx, input }) => requestSera("/approve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) }, { userId: ctx.user.id, ownerAddress: input.owner })),
   buildDeposit: protectedProcedure
     .input(z.object({ token: walletAddressSchema, owner: walletAddressSchema, amount: rawAmountSchema, permitSignature: z.string().regex(/^0x[a-fA-F0-9]+$/).optional(), permitDeadline: z.number().int().positive().optional(), permitAmount: rawAmountSchema.optional() }))
-    .mutation(({ input }) => requestSera("/deposit", {
+    .mutation(({ ctx, input }) => requestSera("/deposit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: input.token, owner: normaliseSeraReadAddress(input.owner), amount: input.amount, ...(input.permitSignature ? { permit_signature: input.permitSignature, permit_deadline: input.permitDeadline, permit_amount: input.permitAmount } : {}) }),
-    }, true)),
+    }, { userId: ctx.user.id, ownerAddress: input.owner })),
   sendBuiltTransaction: protectedProcedure
-    .input(z.object({ rawTransaction: z.string().regex(/^0x[a-fA-F0-9]+$/) }))
-    .mutation(({ input }) => requestSera("/tx/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ raw_tx: input.rawTransaction }) }, true)),
+    .input(z.object({ ownerAddress: walletAddressSchema, rawTransaction: z.string().regex(/^0x[a-fA-F0-9]+$/) }))
+    .mutation(({ ctx, input }) => requestSera("/tx/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ raw_tx: input.rawTransaction }) }, { userId: ctx.user.id, ownerAddress: input.ownerAddress })),
   requestWithdrawal: protectedProcedure
     .input(z.object({ intent: withdrawIntentSchema, userSignature: z.string().regex(/^0x[a-fA-F0-9]+$/) }))
     .mutation(({ input }) => requestSera("/withdraw", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intent: input.intent, user_signature: input.userSignature }) })),

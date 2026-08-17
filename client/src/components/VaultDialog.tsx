@@ -97,14 +97,14 @@ export function VaultDialog({ address, open, onOpenChange, tokens, onSubmitted }
       setStage("signing");
       const approvedRawTransaction = await signBuiltTransaction(address, approval.tx);
       setStage("broadcasting");
-      await sendBuiltTransaction.mutateAsync({ rawTransaction: approvedRawTransaction });
+      await sendBuiltTransaction.mutateAsync({ ownerAddress: address, rawTransaction: approvedRawTransaction });
       builder = await buildDeposit.mutateAsync({ token: selectedToken.address, owner: address, amount: rawAmount }) as BuiltTransactionResponse;
     }
 
     setStage("signing");
     const signedRawTransaction = await signBuiltTransaction(address, builder.tx);
     setStage("broadcasting");
-    const sent = await sendBuiltTransaction.mutateAsync({ rawTransaction: signedRawTransaction }) as SentTransactionResponse;
+    const sent = await sendBuiltTransaction.mutateAsync({ ownerAddress: address, rawTransaction: signedRawTransaction }) as SentTransactionResponse;
     const id = sent.tx_hash ?? `deposit-${Date.now()}`;
     onSubmitted({ id, kind: "deposit", label: `${amount} ${selectedToken.symbol} deposited`, status: "submitted", createdAt: new Date().toISOString() });
     setSettlementId(id);

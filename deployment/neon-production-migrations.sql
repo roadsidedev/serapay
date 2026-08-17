@@ -1,11 +1,11 @@
--- SeraPay production schema, derived from Drizzle migrations 0000 through 0004.
+-- SeraPay production schema, derived from Drizzle migrations 0000 through 0005.
 --
 -- Run this ONCE in the Neon SQL Editor against a new, empty SeraPay database.
 -- Do not run it against a database where any SeraPay tables, types, or Drizzle
 -- migration records already exist. Take a Neon branch or backup first.
 --
 -- This script creates the Drizzle migration ledger at the end, so subsequent
--- Drizzle migrations recognize these five source migrations as already applied.
+-- Drizzle migrations recognize these six source migrations as already applied.
 
 BEGIN;
 
@@ -84,6 +84,26 @@ ALTER TABLE "public"."users" ADD COLUMN "preferred_currency" varchar(3) DEFAULT 
 ALTER TABLE "public"."users" ADD COLUMN "preferred_language" varchar(12) DEFAULT 'en' NOT NULL;
 ALTER TABLE "public"."users" ADD COLUMN "device_approval" varchar(16) DEFAULT 'passkey' NOT NULL;
 
+-- 0005_outstanding_skin.sql
+CREATE TABLE "public"."sera_api_credentials" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "user_id" integer NOT NULL,
+  "owner_address" varchar(42) NOT NULL,
+  "api_key" varchar(128) NOT NULL,
+  "encrypted_api_secret" text NOT NULL,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "last_verified_at" timestamp with time zone,
+  "revoked_at" timestamp with time zone
+);
+ALTER TABLE "public"."sera_api_credentials"
+  ADD CONSTRAINT "sera_api_credentials_user_id_users_id_fk"
+  FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE NO ACTION;
+CREATE UNIQUE INDEX "sera_api_credentials_user_owner_unique"
+  ON "public"."sera_api_credentials" USING btree ("user_id", "owner_address");
+CREATE UNIQUE INDEX "sera_api_credentials_api_key_unique"
+  ON "public"."sera_api_credentials" USING btree ("api_key");
+
 -- Keep Drizzle aware that the equivalent source migrations have been applied.
 CREATE SCHEMA IF NOT EXISTS "drizzle";
 CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
@@ -96,6 +116,7 @@ INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at") VALUES
   ('42be3c03cfc72100bb7dae4d7cd2960ae87f91fa859d230b55e7a98dea63d606', 1786792294630),
   ('f189ac75db1beb8b654e35a5cc8f963ce25e2fb0e224918f9a46936a0f61f377', 1786792730422),
   ('1c84a6099655df855da5f57ad77160bba03bfb0cfb3ab1028905b12aee10aaff', 1786793200521),
-  ('c2d7382e85b65df8e71e69f0c5bafaf5305e0304d5ab86a672d6a4cb764c66e8', 1786798649831);
+  ('c2d7382e85b65df8e71e69f0c5bafaf5305e0304d5ab86a672d6a4cb764c66e8', 1786798649831),
+  ('e0aa86156e7a47ddcac8182d0c5497c179ded3aae870515c6e58758a5484ec2e', 1786958183209);
 
 COMMIT;
