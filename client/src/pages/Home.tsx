@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
+import { resolveMediaUrl } from "@/lib/media";
 import { createWalletActivityEntry, readWalletActivity, recordWalletActivity, type WalletActivityEntry } from "@/lib/walletActivity";
 import { connectInjectedWallet, getWalletChainId, sendErc20Transaction, signSeraSwap, signTypedData } from "@/lib/walletClient";
 import { miniAppCategories, miniAppPermissions, type MiniAppPermission } from "../../../shared/miniApps";
@@ -26,6 +27,8 @@ import { isSeraQuoteUsable, isSeraSettlementTerminal } from "../../../shared/ser
 import { QRCodeSVG } from "qrcode.react";
 import {
   Activity,
+  CircleUserRound,
+  Compass,
   ArrowDownLeft,
   ArrowLeftRight,
   ArrowUpRight,
@@ -51,6 +54,7 @@ import {
   Rocket,
   Send,
   Settings2,
+  WalletMinimal,
   ShieldCheck,
   Sparkles,
   Store,
@@ -87,7 +91,7 @@ type QuoteResponse = {
   };
 };
 
-const navigation = CORE_NAVIGATION.map(item => ({ ...item, icon: item.id === "wallet" ? WalletCards : item.id === "explore" ? Grid2X2 : Settings2 }));
+const navigation = CORE_NAVIGATION.map(item => ({ ...item, icon: item.id === "wallet" ? WalletMinimal : item.id === "explore" ? Compass : CircleUserRound }));
 
 const categoryAccent: Record<string, string> = {
   Payments: "bg-violet-500/15 text-violet-200 border-violet-400/20",
@@ -118,7 +122,7 @@ function WalletMark({ compact = false }: { compact?: boolean }) {
 function SideNavigation({ activeView, setActiveView }: { activeView: View; setActiveView: (view: View) => void }) {
   const { copy } = useLocale();
   return (
-    <aside className="hidden w-[246px] shrink-0 border-r border-white/10 bg-black px-3 py-5 lg:flex lg:flex-col">
+    <aside className="liquid-glass hidden w-[246px] shrink-0 rounded-none border-y-0 border-l-0 px-3 py-5 lg:flex lg:flex-col">
       <div className="px-3"><WalletMark /></div>
       <nav className="mt-10 space-y-1">
         {navigation.map(item => {
@@ -130,7 +134,7 @@ function SideNavigation({ activeView, setActiveView }: { activeView: View; setAc
               onClick={() => setActiveView(item.id)}
               className={cn(
                 "flex h-11 w-full items-center gap-3 rounded-xl px-3 text-sm transition-colors",
-                active ? "bg-white text-black" : "text-white/55 hover:bg-white/[0.08] hover:text-white",
+                active ? "bg-[#7161DF] text-white shadow-[0_8px_24px_rgba(113,97,223,0.24)]" : "text-white/55 hover:bg-[#7161DF]/12 hover:text-white",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -151,15 +155,15 @@ function TopBar({ address, signedIn, avatarUrl = null, displayName = null, onSig
   const { theme, toggleTheme } = useTheme();
   const profileInitial = (displayName ?? address?.slice(2, 3) ?? "S").slice(0, 1).toUpperCase();
   return (
-    <header className="flex h-[72px] items-center justify-between border-b border-white/10 px-4 sm:px-7">
+    <header className="liquid-glass flex h-[72px] items-center justify-between rounded-none border-x-0 border-t-0 px-4 sm:px-7">
       <div className="lg:hidden"><WalletMark compact /></div>
       <div className="hidden lg:flex items-center gap-2 text-xs text-white/45"><span>SeraPay</span><ChevronRight className="h-3.5 w-3.5" /><span className="text-white/80">Wallet</span></div>
       <div className="flex items-center gap-2 sm:gap-3">
-        <button onClick={toggleTheme} aria-label="Toggle color theme" className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-white/70 transition hover:bg-white hover:text-black">{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
+        <button onClick={toggleTheme} aria-label="Toggle color theme" className="glass-control grid h-9 w-9 place-items-center rounded-full text-white/70 transition hover:border-[#7161DF]/60 hover:bg-[#7161DF]/20 hover:text-[#b8b0ff]">{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
         {signedIn ? (
-          <button onClick={() => { if (window.confirm("Sign out of SeraPay?")) void onSignOut(); }} aria-label="Open account sign-out" className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-1.5 pl-1.5 pr-3 text-xs font-medium text-white/85 transition hover:bg-white hover:text-black"><span className="grid h-6 w-6 place-items-center overflow-hidden rounded-full bg-white text-[10px] font-black text-black">{avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : profileInitial}</span><span className="hidden sm:inline">{displayName ?? (address ? shortenAddress(address) : "Account")}</span></button>
+          <button onClick={() => { if (window.confirm("Sign out of SeraPay?")) void onSignOut(); }} aria-label="Open account sign-out" className="glass-control flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 text-xs font-medium text-white/85 transition hover:border-[#7161DF]/60 hover:bg-[#7161DF]/20 hover:text-white"><span className="grid h-6 w-6 place-items-center overflow-hidden rounded-full bg-white text-[10px] font-black text-black">{avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : profileInitial}</span><span className="hidden sm:inline">{displayName ?? (address ? shortenAddress(address) : "Account")}</span></button>
         ) : (
-          <Button onClick={onSignIn} disabled={isConnecting} className="h-9 rounded-full bg-white px-4 text-xs font-semibold text-black hover:bg-white/85">{isConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Sign in</Button>
+          <Button onClick={onSignIn} disabled={isConnecting} className="h-9 rounded-full bg-[#7161DF] px-4 text-xs font-semibold text-white shadow-[0_8px_22px_rgba(113,97,223,0.24)] hover:bg-[#6656d4]">{isConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} Sign in</Button>
         )}
       </div>
     </header>
@@ -203,7 +207,7 @@ function WalletHome({ address, setView, onReceive, onSend, onSwap, onVault, bala
 
   return (
     <section className="mx-auto max-w-[1320px] animate-in fade-in duration-300">
-      <div className="mt-7 rounded-3xl border border-white/12 bg-white/[0.035] p-6 sm:p-8">
+      <div className="liquid-glass mt-7 rounded-3xl p-6 sm:p-8">
           <div className="flex items-start justify-between"><div><p className="text-sm text-white/50">Total stablecoin value</p><div className="mt-2 flex items-baseline gap-2"><span className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">${formatAmount(total)}</span><span className="text-xs text-white/40">wallet + vault</span></div></div><Badge variant="outline" className="border-white/15 text-white/70"><ShieldCheck className="mr-1 h-3 w-3" />Self-custodial</Badge></div>
           <div className="mt-9 grid grid-cols-4 gap-2 sm:gap-3">
             {[
@@ -211,10 +215,10 @@ function WalletHome({ address, setView, onReceive, onSend, onSwap, onVault, bala
               { label: "Send", icon: ArrowUpRight, onClick: onSend },
               { label: "Swap", icon: ArrowLeftRight, onClick: onSwap },
               { label: "Earn", icon: CircleDollarSign, onClick: onVault },
-            ].map(action => { const Icon = action.icon; return <button key={action.label} onClick={action.onClick} className="group flex flex-col items-center gap-2 rounded-2xl border border-white/12 bg-black/20 px-2 py-3 text-xs text-white/60 transition hover:border-white hover:bg-white hover:text-black"><span className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white transition group-hover:border-black/10 group-hover:bg-black group-hover:text-white"><Icon className="h-4 w-4" /></span>{action.label}</button>; })}
+            ].map(action => { const Icon = action.icon; return <button key={action.label} onClick={action.onClick} className="group flex flex-col items-center gap-2 rounded-2xl border border-white/12 bg-black/20 px-2 py-3 text-xs text-white/60 transition hover:border-[#7161DF]/60 hover:bg-[#7161DF] hover:text-white"><span className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white transition group-hover:border-black/10 group-hover:bg-black group-hover:text-white"><Icon className="h-4 w-4" /></span>{action.label}</button>; })}
           </div>
       </div>
-      <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"><div className="mb-5 flex items-center justify-between"><div><p className="font-medium text-white">Stablecoin balances</p><p className="mt-1 text-xs text-white/45">Wallet assets and Sera Vault positions remain separate.</p></div><Button variant="ghost" onClick={() => setView("account")} className="h-8 text-xs text-white/60 hover:bg-white/[0.08] hover:text-white">Activity <ChevronRight className="ml-1 h-3.5 w-3.5" /></Button></div>{balancesLoading ? <div className="grid place-items-center py-12 text-sm text-white/45"><Loader2 className="mb-2 h-5 w-5 animate-spin text-white" />Loading balances…</div> : <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">{displayAssets.map(asset => <div key={`${asset.symbol}-${asset.tokenAddress}`} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5"><div className="flex items-center gap-3"><TokenGlyph symbol={asset.symbol} size="sm" /><div><p className="text-sm font-medium text-white">{asset.symbol}</p><p className="mt-0.5 text-[11px] text-white/40">{asset.currency} · Vault {formatAmount(asset.vaultAvailable)}</p></div></div><div className="text-right"><p className="font-mono text-sm text-white/85">{formatAmount(asset.walletBalance, 4)}</p><p className="mt-0.5 text-[11px] text-white/40">available</p></div></div>)}</div>}</div>
+      <div className="liquid-glass mt-6 rounded-3xl p-5 sm:p-6"><div className="mb-5 flex items-center justify-between"><div><p className="font-medium text-white">Stablecoin balances</p><p className="mt-1 text-xs text-white/45">Wallet assets and Sera Vault positions remain separate.</p></div><Button variant="ghost" onClick={() => setView("account")} className="h-8 text-xs text-white/60 hover:bg-white/[0.08] hover:text-white">Activity <ChevronRight className="ml-1 h-3.5 w-3.5" /></Button></div>{balancesLoading ? <div className="grid place-items-center py-12 text-sm text-white/45"><Loader2 className="mb-2 h-5 w-5 animate-spin text-white" />Loading balances…</div> : <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">{displayAssets.map(asset => <div key={`${asset.symbol}-${asset.tokenAddress}`} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5"><div className="flex items-center gap-3"><TokenGlyph symbol={asset.symbol} size="sm" /><div><p className="text-sm font-medium text-white">{asset.symbol}</p><p className="mt-0.5 text-[11px] text-white/40">{asset.currency} · Vault {formatAmount(asset.vaultAvailable)}</p></div></div><div className="text-right"><p className="font-mono text-sm text-white/85">{formatAmount(asset.walletBalance, 4)}</p><p className="mt-0.5 text-[11px] text-white/40">available</p></div></div>)}</div>}</div>
       <FxRatesCard />
       {!address ? <div className="mt-5 rounded-2xl border border-dashed border-white/[0.14] bg-white/[0.02] p-4 text-center text-sm text-white/45">Continue with your social account to create a SeraPay wallet and load supported stablecoin balances.</div> : null}
     </section>
@@ -224,16 +228,17 @@ function WalletHome({ address, setView, onReceive, onSend, onSwap, onVault, bala
 function EarnSurface({ balances }: { balances: Array<{ symbol: string; vaultAvailable: string; walletBalance: string }> }) {
   const vaultValue = balances.reduce((sum, balance) => sum + safeNumber(balance.vaultAvailable), 0);
   const supportedAssets = balances.filter(balance => safeNumber(balance.walletBalance) > 0 || safeNumber(balance.vaultAvailable) > 0).slice(0, 3);
-  return <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/15 bg-white text-black"><CircleDollarSign className="h-5 w-5" /></div><div><div className="flex items-center gap-2"><p className="font-medium text-white">Earn with Sera Vault</p><Badge variant="outline" className="border-white/15 text-white/60">Liquidity</Badge></div><p className="mt-1 max-w-xl text-xs leading-5 text-white/48">Supply supported stablecoins to the Sera Vault. Review the transaction and sign in your wallet before anything moves.</p></div></div><div className="flex items-center justify-between gap-4 sm:justify-end"><div className="text-right"><p className="text-[11px] uppercase tracking-[0.14em] text-white/40">In vault</p><p className="mt-1 text-xl font-semibold text-white">${formatAmount(vaultValue)}</p></div></div></div>{supportedAssets.length ? <div className="mt-5 flex gap-2 overflow-x-auto pb-1">{supportedAssets.map(asset => <div key={asset.symbol} className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"><TokenGlyph symbol={asset.symbol} size="sm" /><span className="text-xs text-white/70">{asset.symbol}</span><span className="font-mono text-xs text-white">{formatAmount(asset.vaultAvailable)}</span></div>)}</div> : <p className="mt-5 text-xs text-white/40">Your eligible wallet assets appear here when a connected wallet is loaded.</p>}</section>;
+  return <section className="liquid-glass mt-5 rounded-3xl p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/15 bg-white text-black"><CircleDollarSign className="h-5 w-5" /></div><div><div className="flex items-center gap-2"><p className="font-medium text-white">Earn with Sera Vault</p><Badge variant="outline" className="border-white/15 text-white/60">Liquidity</Badge></div><p className="mt-1 max-w-xl text-xs leading-5 text-white/48">Supply supported stablecoins to the Sera Vault. Review the transaction and sign in your wallet before anything moves.</p></div></div><div className="flex items-center justify-between gap-4 sm:justify-end"><div className="text-right"><p className="text-[11px] uppercase tracking-[0.14em] text-white/40">In vault</p><p className="mt-1 text-xl font-semibold text-white">${formatAmount(vaultValue)}</p></div></div></div>{supportedAssets.length ? <div className="mt-5 flex gap-2 overflow-x-auto pb-1">{supportedAssets.map(asset => <div key={asset.symbol} className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"><TokenGlyph symbol={asset.symbol} size="sm" /><span className="text-xs text-white/70">{asset.symbol}</span><span className="font-mono text-xs text-white">{formatAmount(asset.vaultAvailable)}</span></div>)}</div> : <p className="mt-5 text-xs text-white/40">Your eligible wallet assets appear here when a connected wallet is loaded.</p>}</section>;
 }
 
 function FxRatesCard() {
-  const marketsQuery = trpc.sera.markets.useQuery(undefined, { retry: 1 });
+  const marketsQuery = trpc.sera.markets.useQuery(undefined, { retry: 1, refetchInterval: 5000, refetchIntervalInBackground: true });
   const markets = ((marketsQuery.data as { markets?: Array<Record<string, unknown>> } | undefined)?.markets ?? []).slice(0, 6);
   const getMarketLabel = (market: Record<string, unknown>) => String(market.symbol ?? market.name ?? market.market ?? `${market.base_currency ?? market.base ?? "—"}/${market.quote_currency ?? market.quote ?? "—"}`);
   const getMarketRate = (market: Record<string, unknown>) => market.price ?? market.rate ?? market.mid_price ?? market.last_price ?? null;
 
-  return <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"><div className="flex items-center justify-between"><div><p className="font-medium text-white">Live FX exchange rates</p><p className="mt-1 text-xs text-white/45">Protocol markets supplied by Sera.</p></div><button className="text-xs font-medium text-white underline-offset-4 hover:underline" onClick={() => marketsQuery.refetch()}>Refresh</button></div>{marketsQuery.isLoading ? <div className="grid place-items-center py-8 text-xs text-white/50"><Loader2 className="mb-2 h-4 w-4 animate-spin text-white" />Reading markets…</div> : marketsQuery.error ? <p className="mt-5 text-xs leading-5 text-white/60">FX market data is temporarily unavailable: {marketsQuery.error.message}</p> : !markets.length ? <p className="mt-5 text-xs leading-5 text-white/45">No published Sera FX markets are available yet.</p> : <div className="mt-5 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">{markets.map((market, index) => <div key={`${getMarketLabel(market)}-${index}`} className="min-w-[168px] snap-start rounded-2xl border border-white/10 bg-black/20 px-4 py-3 sm:min-w-0"><div className="flex items-center justify-between"><span className="text-sm font-medium text-white">{getMarketLabel(market)}</span><span className="text-[10px] uppercase tracking-wide text-white/45">Live</span></div><p className="mt-2 font-mono text-base text-white">{getMarketRate(market) === null ? "—" : String(getMarketRate(market))}</p></div>)}</div>}</section>;
+  const updatedAt = marketsQuery.dataUpdatedAt ? new Date(marketsQuery.dataUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : null;
+  return <section className="liquid-glass mt-5 rounded-3xl p-5 sm:p-6"><div className="flex items-center justify-between"><div><p className="font-medium text-white">Live FX exchange rates</p><p className="mt-1 text-xs text-white/45">Streaming from Sera markets.</p></div><div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-[#b8b0ff]"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#7161DF]" />Live{updatedAt ? ` · ${updatedAt}` : ""}</div></div>{marketsQuery.isLoading ? <div className="grid place-items-center py-8 text-xs text-white/50"><Loader2 className="mb-2 h-4 w-4 animate-spin text-white" />Reading markets…</div> : marketsQuery.error ? <p className="mt-5 text-xs leading-5 text-white/60">FX market data is temporarily unavailable: {marketsQuery.error.message}</p> : !markets.length ? <p className="mt-5 text-xs leading-5 text-white/45">No published Sera FX markets are available yet.</p> : <div className="mt-5 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">{markets.map((market, index) => <div key={`${getMarketLabel(market)}-${index}`} className="min-w-[168px] snap-start rounded-2xl border border-white/10 bg-black/20 px-4 py-3 sm:min-w-0"><div className="flex items-center justify-between"><span className="text-sm font-medium text-white">{getMarketLabel(market)}</span><span className="text-[10px] uppercase tracking-wide text-white/45">Live</span></div><p className="mt-2 font-mono text-base text-white">{getMarketRate(market) === null ? "—" : String(getMarketRate(market))}</p></div>)}</div>}</section>;
 }
 
 
@@ -412,8 +417,10 @@ function SendDialog({ address, open, onOpenChange, tokens, onActivity }: { addre
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-md border-white/15 bg-black text-white"><DialogHeader><DialogTitle>Send stablecoin</DialogTitle><DialogDescription className="text-white/50">Review the asset, recipient, and amount before your wallet broadcasts the ERC-20 transfer.</DialogDescription></DialogHeader><div className="space-y-4 pt-2"><Field label="Asset"><Select value={selected?.address} onValueChange={setTokenAddress}><SelectTrigger className="field-input"><SelectValue /></SelectTrigger><SelectContent>{tokens.map(token => <SelectItem key={token.address} value={token.address}>{token.symbol} · {token.currency}</SelectItem>)}</SelectContent></Select></Field><Field label="Recipient"><Input value={recipient} onChange={event => setRecipient(event.target.value)} placeholder="0x…" className="field-input font-mono" /></Field><Field label="Amount"><Input value={amount} onChange={event => setAmount(event.target.value)} inputMode="decimal" placeholder="0.00" className="field-input" /></Field><div className="rounded-xl border border-white/15 bg-white/[0.04] p-3 text-xs leading-5 text-white/65"><ShieldCheck className="mr-1 inline h-3.5 w-3.5" />This action asks your wallet to broadcast a standard ERC-20 transfer. Confirm the destination and amount in your wallet before approving.</div><Button onClick={submit} disabled={submitting || !tokens.length} className="h-11 w-full rounded-xl bg-white text-black hover:bg-white/85">{submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Review & broadcast</Button></div></DialogContent></Dialog>;
 }
 
-function AccountView({ address, developerToolsOpen, isAdmin, onCloseDevConsole, onOpenDevConsole }: { address: string | null; developerToolsOpen: boolean; isAdmin: boolean; onCloseDevConsole: () => void; onOpenDevConsole: () => void }) {
-  return <section className="mx-auto max-w-[1050px] space-y-5"><header><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Settings</h1></header><AccountProfilePanel address={address} /><section className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-6">{developerToolsOpen ? <div className="space-y-5"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Dev Console</p><h2 className="mt-1 text-lg font-semibold text-white">Build and publish mini apps</h2></div><Button variant="outline" onClick={onCloseDevConsole} className="rounded-xl border-white/15 text-white hover:bg-white hover:text-black">Close</Button></div><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</div> : <button onClick={onOpenDevConsole} className="flex w-full items-center justify-between text-left"><span><span className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Dev Console</span><span className="mt-2 block text-sm font-medium text-white">Build and publish mini apps</span></span><Code2 className="h-5 w-5 text-white/75" /></button>}</section><section className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 sm:p-6"><div className="flex items-center gap-3"><Activity className="h-4 w-4 text-white/70" /><h2 className="text-sm font-medium text-white">Activity</h2></div><div className="mt-5 border-t border-white/10 pt-5"><ActivityJournal address={address} isAuthenticated={Boolean(address)} /></div></section></section>;
+function AccountView({ address, isAdmin }: { address: string | null; isAdmin: boolean }) {
+  const [tab, setTab] = useState<"settings" | "dev" | "activity">("settings");
+  const tabs = [{ id: "settings", label: "Settings", icon: Settings2 }, { id: "dev", label: "Dev console", icon: Code2 }, { id: "activity", label: "Activity", icon: Activity }] as const;
+  return <section className="mx-auto max-w-[1050px] space-y-5"><header><div className="flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9b90f5]">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Your account</h1></div><span className="grid h-11 w-11 place-items-center rounded-2xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><CircleUserRound className="h-5 w-5" /></span></div></header><div className="glass-control flex w-full gap-1 rounded-2xl p-1" role="tablist" aria-label="Account sections">{tabs.map(item => { const Icon = item.icon; return <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-2 text-xs font-medium transition", tab === item.id ? "bg-[#7161DF] text-white shadow-[0_8px_22px_rgba(113,97,223,0.28)]" : "text-white/55 hover:text-white")}><Icon className="h-4 w-4" />{item.label}</button>; })}</div>{tab === "settings" ? <AccountProfilePanel address={address} /> : null}{tab === "dev" ? <section className="liquid-glass rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Code2 className="h-4 w-4" /></span><div><p className="text-sm font-medium text-white">Build and publish mini apps</p><p className="mt-1 text-xs text-white/45">Developer tools for your mini-app workflow.</p></div></div><div className="space-y-5"><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</div></section> : null}{tab === "activity" ? <section className="liquid-glass rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Activity className="h-4 w-4" /></span><p className="text-sm font-medium text-white">Activity</p></div><ActivityJournal address={address} isAuthenticated={Boolean(address)} /></section> : null}</section>;
 }
 
 export default function Home() {
@@ -428,7 +435,6 @@ export default function Home() {
   const [sendOpen, setSendOpen] = useState(false);
   const [homeSwapOpen, setHomeSwapOpen] = useState(false);
   const [vaultOpen, setVaultOpen] = useState(false);
-  const [developerToolsOpen, setDeveloperToolsOpen] = useState(false);
   const [miniApp, setMiniApp] = useState<{ name: string; launchUrl?: string; source: "sandbox" | "verified"; permissions: string[] } | null>(null);
   const [connecting, setConnecting] = useState(false);
   const tokenQuery = trpc.sera.tokens.useQuery(undefined, { retry: 1 });
@@ -448,13 +454,13 @@ export default function Home() {
   const recordActivity = (entry: WalletActivityEntry) => { recordWalletActivity(entry); };
   const openSend = () => setSendOpen(true);
   const isAdmin = user?.role === "admin";
-  const content = activeView === "wallet" ? <WalletHome address={address} setView={setActiveView} onReceive={() => setReceiveOpen(true)} onSend={openSend} onSwap={() => setHomeSwapOpen(true)} onVault={() => setVaultOpen(true)} balances={balancesQuery.data ?? []} balancesLoading={balancesQuery.isLoading} tokens={tokens} /> : activeView === "explore" ? <ExploreLayer onLaunch={app => setMiniApp(app)} /> : <AccountView address={address} developerToolsOpen={developerToolsOpen} isAdmin={isAdmin} onOpenDevConsole={() => setDeveloperToolsOpen(true)} onCloseDevConsole={() => setDeveloperToolsOpen(false)} />;
+  const content = activeView === "wallet" ? <WalletHome address={address} setView={setActiveView} onReceive={() => setReceiveOpen(true)} onSend={openSend} onSwap={() => setHomeSwapOpen(true)} onVault={() => setVaultOpen(true)} balances={balancesQuery.data ?? []} balancesLoading={balancesQuery.isLoading} tokens={tokens} /> : activeView === "explore" ? <ExploreLayer onLaunch={app => setMiniApp(app)} /> : <AccountView address={address} isAdmin={isAdmin} />;
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
         <SideNavigation activeView={activeView} setActiveView={setActiveView} />
         <div className="min-w-0 flex-1">
-          <TopBar address={address} signedIn={isAuthenticated} avatarUrl={avatarUrl ?? user?.avatarUrl} displayName={displayName ?? user?.name} onSignIn={connectWallet} onSignOut={signOut} onReceive={() => setReceiveOpen(true)} isConnecting={connecting} />
+          <TopBar address={address} signedIn={isAuthenticated} avatarUrl={resolveMediaUrl(avatarUrl ?? user?.avatarUrl)} displayName={displayName ?? user?.name} onSignIn={connectWallet} onSignOut={signOut} onReceive={() => setReceiveOpen(true)} isConnecting={connecting} />
           <main className="px-4 py-7 pb-32 sm:px-7 lg:px-10 lg:py-9">
             {content}
           </main>
@@ -465,8 +471,8 @@ export default function Home() {
       <VaultDialog address={address} open={vaultOpen} onOpenChange={setVaultOpen} tokens={tokens} onSubmitted={recordActivity} />
       <Dialog open={homeSwapOpen} onOpenChange={setHomeSwapOpen}><DialogContent className="h-[min(860px,94vh)] max-w-4xl overflow-y-auto border-white/15 bg-black p-4 text-white sm:p-6"><SwapView address={address} network={network} tokens={tokens} onActivity={recordActivity} /></DialogContent></Dialog>
       <MiniAppLaunchDialog app={miniApp} open={Boolean(miniApp)} onOpenChange={open => !open && setMiniApp(null)} />
-      <nav aria-label="Primary navigation" className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30 mx-auto flex max-w-sm items-center gap-1 rounded-2xl border border-white/15 bg-black/95 p-1.5 shadow-[0_16px_42px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:hidden">
-        {navigation.map(item => { const Icon = item.icon; const active = activeView === item.id; return <button key={item.id} onClick={() => setActiveView(item.id)} className={cn("grid min-h-12 flex-1 place-items-center gap-1 rounded-xl py-1 text-[10px] font-medium transition", active ? "bg-white text-black" : "text-white/50 hover:bg-white/[0.08] hover:text-white")}><Icon className="h-4 w-4" />{copy[item.id]}</button>; })}
+      <nav aria-label="Primary navigation" className="glass-nav fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30 mx-auto flex max-w-sm items-center gap-1 rounded-full p-1.5 lg:hidden">
+        {navigation.map(item => { const Icon = item.icon; const active = activeView === item.id; return <button key={item.id} onClick={() => setActiveView(item.id)} className={cn("grid min-h-12 flex-1 place-items-center gap-1 rounded-full py-1 text-[10px] font-medium transition", active ? "bg-[#7161DF] text-white shadow-[0_8px_22px_rgba(113,97,223,0.28)]" : "text-white/50 hover:bg-[#7161DF]/12 hover:text-white")}><Icon className="h-4 w-4" />{copy[item.id]}</button>; })}
       </nav>
     </div>
   );

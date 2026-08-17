@@ -37,19 +37,19 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.145 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #7161DF;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.96 0 0);
   --secondary-foreground: oklch(0.145 0 0);
   --muted: oklch(0.96 0 0);
   --muted-foreground: oklch(0.47 0 0);
-  --accent: oklch(0.94 0 0);
-  --accent-foreground: oklch(0.145 0 0);
+  --accent: color-mix(in srgb, #7161DF 12%, white);
+  --accent-foreground: #7161DF;
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
-  --ring: oklch(0.36 0 0);
+  --ring: #7161DF;
 }
 
 .dark {
@@ -59,17 +59,17 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.115 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.12 0 0);
+  --primary: #7161DF;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.17 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.17 0 0);
   --muted-foreground: oklch(0.63 0 0);
-  --accent: oklch(0.22 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: color-mix(in srgb, #7161DF 20%, #0b0912);
+  --accent-foreground: #d9d4ff;
   --border: oklch(1 0 0 / 13%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.78 0 0);
+  --ring: #9b90f5;
 }
 
 @layer base {
@@ -93,6 +93,35 @@
   .field-input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 }
 
+@layer components {
+  .liquid-glass {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid color-mix(in srgb, #7161DF 28%, white 8%, transparent);
+    background: linear-gradient(135deg, color-mix(in srgb, #7161DF 11%, transparent), color-mix(in srgb, white 5%, transparent) 48%, color-mix(in srgb, #7161DF 6%, transparent));
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(113, 97, 223, 0.04);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+  }
+  .liquid-glass::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(circle at 12% 0%, rgba(255,255,255,0.12), transparent 34%), radial-gradient(circle at 88% 100%, rgba(113,97,223,0.12), transparent 38%);
+    content: "";
+    pointer-events: none;
+  }
+  .glass-nav {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(135deg, rgba(27, 21, 54, 0.78), rgba(11, 9, 18, 0.72));
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 28px rgba(113, 97, 223, 0.16);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+  }
+  .glass-control { border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+}
+
 @layer utilities {
   html[data-theme="light"] .bg-black,
   html[data-theme="light"] [class*="bg-black/"] { background-color: var(--background) !important; }
@@ -102,6 +131,10 @@
   html[data-theme="light"] [class*="border-white"] { border-color: color-mix(in srgb, var(--foreground) 14%, transparent) !important; }
   html[data-theme="light"] .hover\:bg-white:hover { background-color: var(--foreground) !important; }
   html[data-theme="light"] .hover\:text-black:hover { color: var(--background) !important; }
+  html[data-theme="light"] .liquid-glass { border-color: color-mix(in srgb, #7161DF 24%, var(--foreground) 10%, transparent); background: linear-gradient(135deg, color-mix(in srgb, #7161DF 8%, white), color-mix(in srgb, white 72%, transparent)); box-shadow: 0 18px 48px rgba(42, 35, 88, 0.12), inset 0 1px 0 rgba(255,255,255,0.82); }
+  html[data-theme="light"] .glass-nav { border-color: color-mix(in srgb, #7161DF 25%, var(--foreground) 10%, transparent); background: color-mix(in srgb, white 72%, #7161DF 8%); box-shadow: 0 18px 48px rgba(42, 35, 88, 0.16), inset 0 1px 0 rgba(255,255,255,0.9); }
+  html[data-theme="light"] .glass-control { border-color: color-mix(in srgb, #7161DF 22%, var(--foreground) 10%, transparent); background: color-mix(in srgb, white 62%, #7161DF 6%); }
+  html[data-theme="light"] .bg-\[\#7161DF\], html[data-theme="light"] .bg-\[\#7161DF\].text-white, html[data-theme="light"] .bg-\[\#7161DF\] .text-white { color: #ffffff !important; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
