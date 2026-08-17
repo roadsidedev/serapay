@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-17T12:10:00Z",
+  "title": "Design System: SeraPay",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Deep Sera Violet", "canonical": "#7161DF", "tonalRamp": ["#171335", "#28215E", "#3B3287", "#4D43AC", "#7161DF", "#9187EC", "#B8B0FF", "#E9E7FF"] },
+      "primary-soft": { "role": "accent", "displayName": "Soft Violet Wash", "canonical": "rgba(113, 97, 223, 0.12)", "tonalRamp": ["rgba(113,97,223,0.03)", "rgba(113,97,223,0.06)", "rgba(113,97,223,0.09)", "rgba(113,97,223,0.12)", "rgba(113,97,223,0.16)", "rgba(113,97,223,0.2)", "rgba(113,97,223,0.26)", "rgba(113,97,223,0.34)"] },
+      "dark-background": { "role": "neutral", "displayName": "Night Canvas", "canonical": "oklch(0.08 0 0)", "tonalRamp": ["#050505", "#0B0B0B", "#111111", "#181818", "#202020", "#2C2C2C", "#3A3A3A", "#4B4B4B"] },
+      "light-background": { "role": "neutral", "displayName": "Paper Canvas", "canonical": "oklch(0.985 0 0)", "tonalRamp": ["#3A3A3A", "#585858", "#777777", "#969696", "#B5B5B5", "#D0D0D0", "#E5E5E5", "#FAFAFA"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles and major account values." },
+      "display-medium": { "displayName": "Display Medium", "purpose": "Embedded preview values and compact high-emphasis numbers." },
+      "body": { "displayName": "Body", "purpose": "Operational descriptions and supporting text." },
+      "caption": { "displayName": "Caption", "purpose": "Supporting descriptions and timestamps." },
+      "micro": { "displayName": "Micro", "purpose": "Dense metadata and live status labels." },
+      "label": { "displayName": "Label", "purpose": "Section eyebrows and navigation metadata." }
+    },
+    "shadows": [
+      { "name": "glass-ambient", "value": "0 18px 50px rgba(0, 0, 0, 0.22)", "purpose": "Diffuse lift beneath large liquid-glass surfaces." },
+      { "name": "navigation-lift", "value": "0 18px 48px rgba(0, 0, 0, 0.38)", "purpose": "Separate the mobile navigation pill from content." },
+      { "name": "accent-lift", "value": "0 8px 22px rgba(113, 97, 223, 0.28)", "purpose": "Emphasize selected tabs and primary actions." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Compact button, tab, and hover transitions." },
+      { "name": "live-pulse", "value": "animate-pulse", "purpose": "Communicate the active live-market polling state." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Use for the next clear action, sign-in, launch, or enable flow.",
+      "html": "<button class=\"ds-btn-primary\">Continue</button>",
+      "css": ".ds-btn-primary { background:#7161DF; color:#fff; padding:10px 16px; border:0; border-radius:12px; font:600 14px Manrope,sans-serif; transition:background .16s cubic-bezier(.23,1,.32,1), box-shadow .16s cubic-bezier(.23,1,.32,1), transform .16s cubic-bezier(.23,1,.32,1); } .ds-btn-primary:hover { background:#6656D4; box-shadow:0 8px 22px rgba(113,97,223,.28); } .ds-btn-primary:focus-visible { outline:2px solid #B8B0FF; outline-offset:3px; } .ds-btn-primary:active { transform:scale(.97); }"
+    },
+    {
+      "name": "Glass Surface",
+      "kind": "card",
+      "refersTo": "surface-glass",
+      "description": "Use for major wallet, Account, Explore, and status surfaces.",
+      "html": "<section class=\"ds-glass-surface\"><h2>Surface title</h2><p>Short supporting content.</p></section>",
+      "css": ".ds-glass-surface { position:relative; overflow:hidden; padding:20px; border:1px solid rgba(113,97,223,.28); border-radius:24px; background:linear-gradient(135deg,rgba(113,97,223,.11),rgba(255,255,255,.05) 48%,rgba(113,97,223,.06)); color:#fff; box-shadow:0 18px 50px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.1); backdrop-filter:blur(24px) saturate(150%); } .ds-glass-surface h2 { margin:0; font:600 16px/1.35 Manrope,sans-serif; } .ds-glass-surface p { margin:6px 0 0; color:rgba(255,255,255,.55); font:400 14px/1.45 Manrope,sans-serif; }"
+    },
+    {
+      "name": "Mobile Navigation",
+      "kind": "nav",
+      "refersTo": "nav-pill",
+      "description": "Use for the fixed mobile primary navigation with three destinations.",
+      "html": "<nav class=\"ds-nav-pill\"><button class=\"is-active\">Wallet</button><button>Explore</button><button>Account</button></nav>",
+      "css": ".ds-nav-pill { display:flex; gap:4px; padding:6px; border:1px solid rgba(255,255,255,.18); border-radius:9999px; background:linear-gradient(135deg,rgba(27,21,54,.78),rgba(11,9,18,.72)); box-shadow:0 18px 48px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.14),0 0 28px rgba(113,97,223,.16); backdrop-filter:blur(24px) saturate(160%); } .ds-nav-pill button { flex:1; min-height:48px; padding:4px 10px; border:0; border-radius:9999px; background:transparent; color:rgba(255,255,255,.5); font:600 11px/1.2 Manrope,sans-serif; } .ds-nav-pill button:hover { color:#fff; background:rgba(113,97,223,.12); } .ds-nav-pill button.is-active { background:#7161DF; color:#fff; box-shadow:0 8px 22px rgba(113,97,223,.28); }"
+    },
+    {
+      "name": "Inline Edit Row",
+      "kind": "custom",
+      "refersTo": "profile-inline-edit",
+      "description": "Compact identity row with click-to-edit avatar and username actions.",
+      "html": "<div class=\"ds-profile-row\"><button class=\"ds-avatar\" aria-label=\"Edit profile photo\">S</button><span class=\"ds-profile-name\">@serapay</span><button class=\"ds-icon-button\" aria-label=\"Edit username\">Edit</button></div>",
+      "css": ".ds-profile-row { display:flex; align-items:center; gap:16px; padding:16px; border:1px solid rgba(113,97,223,.28); border-radius:24px; background:linear-gradient(135deg,rgba(113,97,223,.11),rgba(255,255,255,.05)); color:#fff; } .ds-avatar { width:64px; height:64px; border:1px solid rgba(113,97,223,.4); border-radius:22px; background:#fff; color:#000; font:600 18px Manrope,sans-serif; } .ds-profile-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:600 14px/1.35 Manrope,sans-serif; } .ds-icon-button { width:36px; height:36px; border:0; border-radius:12px; background:transparent; color:rgba(255,255,255,.55); } .ds-icon-button:hover { background:rgba(113,97,223,.15); color:#B8B0FF; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Violet Control Room",
+    "overview": "SeraPay is a focused operating surface for a self-custodial stablecoin wallet. The visual language uses deep indigo light, quiet translucent surfaces, and precise controls to make financial state feel calm and legible rather than noisy or speculative. Purple is reserved for active intent: navigation, primary actions, focus, and meaningful status.\n\nThe system is intentionally low-copy. Surfaces should explain themselves through hierarchy, familiar iconography, state changes, and direct manipulation. Liquid-glass layers create separation without turning the interface into a stack of opaque boxes; depth comes from blur, tonal gradients, thin translucent borders, and restrained purple glow.",
+    "keyCharacteristics": ["Deep-purple intent color with dark neutral foundations", "Translucent, blurred surfaces with gentle internal highlights", "Mobile-first pill navigation and compact account controls", "Dense but breathable operating layout", "Direct action over instructional helper text"],
+    "rules": [
+      { "name": "The Violet Intent Rule", "body": "Use #7161DF for actions and state, not for every decorative edge. Keep the strongest glow around active or interactive elements.", "section": "colors" },
+      { "name": "The Short-Line Rule", "body": "Keep explanatory text short enough to scan on mobile. Prefer one useful sentence over stacked helper paragraphs.", "section": "typography" },
+      { "name": "The Transparent Layer Rule", "body": "Do not turn every region into an opaque card. Use blur and tonal layering to preserve a sense of a continuous workspace.", "section": "elevation" }
+    ],
+    "dos": ["Do use #7161DF as the single strong intent accent.", "Do keep navigation, account editing, and primary actions immediately recognizable.", "Do use semantic labels and visible focus states for icon-only controls.", "Do preserve the liquid-glass blur and tonal layering across related surfaces.", "Do verify narrow-width behavior and safe-area spacing before shipping."],
+    "donts": ["Don't add helper copy when hierarchy and control labels already explain the action.", "Don't use generic gear icons for the Account destination.", "Don't fake live market values or label stale data as live.", "Don't let glass effects reduce text contrast or obscure focus.", "Don't create dense desktop layouts that collapse into unreadable mobile rows."]
+  }
+}
