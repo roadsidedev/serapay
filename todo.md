@@ -45,3 +45,7 @@
 - [x] Consolidate duplicate Account developer controls into one coherent Dev Console surface.
 - [x] Fix the production frontend blank screen caused by the wallet bundle `forwardRef` runtime error and verify the Vercel artifact loads.
 - [ ] Redeploy the Vercel frontend with the wallet-bundle repair and verify the public site loads without the prior `forwardRef` error; record the verified deployment URL or build identifier.
+- [x] Build a comprehensive Pocket Sera developer documentation site with Astro Starlight and Simplified Technical English.
+- [x] Define and document the Pocket Mini App framework, manifest contract, wallet interaction boundary, review process, and production deployment procedure.
+- [x] Configure Pocket Sera documentation for production hosting at `pocket-sera.com/doc` and validate the static build.
+- [ ] Deploy the updated Vercel artifact and connect `pocket-sera.com` so the public docs URL `https://pocket-sera.com/doc` can be verified.
