@@ -12,6 +12,9 @@ hero:
     - text: Read the Mini App contract
       link: /doc/mini-apps/overview/
       icon: open-book
+    - text: Open Pocket Sera
+      link: https://serapay.vercel.app/
+      icon: right-arrow
 ---
 
 Pocket Sera is a wallet and a Mini App host.

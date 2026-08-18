@@ -129,15 +129,17 @@ function getFirstName(displayName: string | null | undefined) {
   return normalized ? normalized.split(/\s+/)[0] : "there";
 }
 
-function WalletMark({ compact = false }: { compact?: boolean }) {
-  return <div className={cn("font-semibold tracking-tight text-white", compact ? "text-sm" : "px-3")}>Pocket Sera</div>;
+function WalletMark({ compact = false, onClick }: { compact?: boolean; onClick?: () => void }) {
+  const content = <img src="/brand/pocket-sera-mark-192.png" alt="Pocket Sera" className={cn("object-contain", compact ? "h-8 w-8" : "h-12 w-12")} />;
+  if (!onClick) return <span className={cn("inline-flex items-center", compact ? "" : "px-3")}>{content}</span>;
+  return <button type="button" onClick={onClick} aria-label="Go to Pocket Sera wallet" className="inline-flex items-center rounded-xl transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8b0ff] focus-visible:ring-offset-2 focus-visible:ring-offset-black">{content}</button>;
 }
 
 function SideNavigation({ activeView, setActiveView }: { activeView: View; setActiveView: (view: View) => void }) {
   const { copy } = useLocale();
   return (
     <aside className="liquid-glass hidden w-[246px] shrink-0 rounded-none border-y-0 border-l-0 px-3 py-5 lg:flex lg:flex-col">
-      <div className="px-3"><WalletMark /></div>
+      <div className="px-3"><WalletMark onClick={() => setActiveView("wallet")} /></div>
       <nav className="mt-10 space-y-1">
         {navigation.map(item => {
           const Icon = item.icon;
@@ -161,13 +163,13 @@ function SideNavigation({ activeView, setActiveView }: { activeView: View; setAc
   );
 }
 
-function TopBar({ address, signedIn, avatarUrl = null, displayName = null, onSignIn, onSignOut, onReceive, isConnecting }: { address: string | null; signedIn: boolean; avatarUrl?: string | null; displayName?: string | null; network?: WalletNetwork; onSignIn: () => void; onSignOut: () => Promise<void>; onReceive: () => void; isConnecting: boolean }) {
+function TopBar({ address, signedIn, avatarUrl = null, displayName = null, onSignIn, onSignOut, onReceive, onLogoClick, isConnecting }: { address: string | null; signedIn: boolean; avatarUrl?: string | null; displayName?: string | null; network?: WalletNetwork; onSignIn: () => void; onSignOut: () => Promise<void>; onReceive: () => void; onLogoClick: () => void; isConnecting: boolean }) {
   const { theme, toggleTheme } = useTheme();
   const profileInitial = (displayName ?? address?.slice(2, 3) ?? "S").slice(0, 1).toUpperCase();
   return (
     <header className="liquid-glass flex h-[72px] items-center justify-between rounded-none border-x-0 border-t-0 px-4 sm:px-7">
-      <div className="lg:hidden"><WalletMark compact /></div>
-      <div className="hidden lg:flex items-center gap-2 text-xs text-white/45"><span>Pocket Sera</span><ChevronRight className="h-3.5 w-3.5" /><span className="text-white/80">Wallet</span></div>
+      <div className="lg:hidden"><WalletMark compact onClick={onLogoClick} /></div>
+      <div className="hidden lg:flex items-center gap-2 text-xs text-white/45"><WalletMark compact onClick={onLogoClick} /><ChevronRight className="h-3.5 w-3.5" /><span className="text-white/80">Wallet</span></div>
       <div className="flex items-center gap-2 sm:gap-3">
         <button onClick={toggleTheme} aria-label="Toggle color theme" className="glass-control grid h-9 w-9 place-items-center rounded-full text-white/70 transition hover:border-[#7161DF]/60 hover:bg-[#7161DF]/20 hover:text-[#b8b0ff]">{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}</button>
         {signedIn ? (
@@ -506,7 +508,7 @@ export default function Home() {
       <div className="flex min-h-screen">
         <SideNavigation activeView={activeView} setActiveView={setActiveView} />
         <div className="min-w-0 flex-1">
-          <TopBar address={address} signedIn={isAuthenticated} avatarUrl={resolveMediaUrl(avatarUrl ?? user?.avatarUrl)} displayName={displayName ?? user?.name} onSignIn={connectWallet} onSignOut={signOut} onReceive={() => setReceiveOpen(true)} isConnecting={connecting} />
+          <TopBar address={address} signedIn={isAuthenticated} avatarUrl={resolveMediaUrl(avatarUrl ?? user?.avatarUrl)} displayName={displayName ?? user?.name} onSignIn={connectWallet} onSignOut={signOut} onReceive={() => setReceiveOpen(true)} onLogoClick={() => setActiveView("wallet")} isConnecting={connecting} />
           <main className="px-4 py-7 pb-32 sm:px-7 lg:px-10 lg:py-9">
             {content}
           </main>

@@ -21,6 +21,14 @@ export default defineConfig({
     starlight({
       title: "Pocket Sera Docs",
       description: "Build, test, submit, and operate Pocket Mini Apps on Pocket Sera.",
+      logo: {
+        src: "./src/assets/pocket-sera-lockup.png",
+        alt: "Pocket Sera",
+      },
+      favicon: "/brand/pocket-sera-mark-192.png",
+      components: {
+        Header: "./src/components/DocsHeader.astro",
+      },
       customCss: ["./src/styles/custom.css"],
       social: [
         { icon: "github", label: "Pocket Sera on GitHub", href: "https://github.com/roadsidedev/serapay" },
