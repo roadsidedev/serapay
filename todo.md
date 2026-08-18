@@ -1,6 +1,6 @@
 # Project TODO
 
-- [x] Define secure SeraPay domain models and the client/server integration boundary.
+- [x] Define secure Pocket Sera domain models and the client/server integration boundary.
 - [x] Complete the Sera adapter with dedicated normalized `/orders` and `/fills` server procedures and tests.
 - [x] Build connected-wallet balance, address, copy, and QR receive experiences.
 - [x] Add a Sera-backed swap status refresh that rechecks the submitted route UUID and surfaces updated pending, success, or error state.
@@ -15,7 +15,7 @@
 - [x] Replace MySQL-specific persistence code with Neon/Postgres Drizzle configuration and migrations.
 - [x] Prepare a Railway-friendly backend deployment boundary and environment-variable contract.
 - [x] Prepare a Vercel-friendly frontend deployment boundary, public environment contract, and CORS configuration.
-- [ ] Configure a production authentication provider compatible with Railway and Vercel, then bootstrap the SeraPay owner role in Neon.
+- [ ] Configure a production authentication provider compatible with Railway and Vercel, then bootstrap the Pocket Sera owner role in Neon.
 - [ ] Configure `SERA_CREDENTIAL_ENCRYPTION_KEY` on Railway, enable per-user Sera access, and verify protected balance, activity, permit, deposit, and withdrawal flows against a connected wallet.
 - [ ] Replace preview-only authentication with Privy social onboarding and a secure production identity boundary.
 - [x] Add a username model derived from the authenticated social identity, with protected availability validation and user-facing account naming.

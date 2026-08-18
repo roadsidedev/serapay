@@ -4,7 +4,8 @@ import { Switch } from "@/components/ui/switch";
 import { SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const PREFERENCES_KEY = "serapay-profile-preferences";
+const PREFERENCES_KEY = "pocket-sera-profile-preferences";
+const LEGACY_PREFERENCES_KEY = "serapay-profile-preferences";
 
 export function ProfilePreferences() {
   const [currency, setCurrency] = useState("USD");
@@ -12,7 +13,7 @@ export function ProfilePreferences() {
 
   useEffect(() => {
     try {
-      const stored = JSON.parse(window.localStorage.getItem(PREFERENCES_KEY) ?? "{}");
+      const stored = JSON.parse(window.localStorage.getItem(PREFERENCES_KEY) ?? window.localStorage.getItem(LEGACY_PREFERENCES_KEY) ?? "{}");
       if (stored.currency === "USD" || stored.currency === "EUR" || stored.currency === "GBP") setCurrency(stored.currency);
       if (typeof stored.privacyMode === "boolean") setPrivacyMode(stored.privacyMode);
     } catch {

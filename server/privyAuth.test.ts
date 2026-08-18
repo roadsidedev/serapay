@@ -9,7 +9,7 @@ describe("Privy authentication helpers", () => {
     expect(extractBearerAccessToken(undefined)).toBeNull();
   });
 
-  it("maps the verified Privy user identifier to a non-custodial SeraPay identity", () => {
+  it("maps the verified Privy user identifier to a non-custodial Pocket Sera identity", () => {
     expect(toPrivyIdentity({ user_id: "did:privy:cm123" })).toEqual({
       openId: "did:privy:cm123",
       privyDid: "did:privy:cm123",

@@ -1,7 +1,7 @@
--- SeraPay production schema, derived from Drizzle migrations 0000 through 0005.
+-- Pocket Sera production schema, derived from Drizzle migrations 0000 through 0005.
 --
--- Run this ONCE in the Neon SQL Editor against a new, empty SeraPay database.
--- Do not run it against a database where any SeraPay tables, types, or Drizzle
+-- Run this ONCE in the Neon SQL Editor against a new, empty Pocket Sera database.
+-- Do not run it against a database where any Pocket Sera tables, types, or Drizzle
 -- migration records already exist. Take a Neon branch or backup first.
 --
 -- This script creates the Drizzle migration ledger at the end, so subsequent

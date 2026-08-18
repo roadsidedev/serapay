@@ -4,7 +4,7 @@
 
 The canonical REST base URL is `https://api.sera.cx/api/v1`. The official API overview identifies `POST /swap/quote` for quote generation and `POST /swap` for execution of the signed quote. It further identifies `GET /balances`, `POST /deposit`, `POST /withdraw`, `POST /withdraw/build`, and `POST /withdraw/send` as the relevant account-and-funds endpoints.
 
-| Capability | Official endpoint | Authorization model | SeraPay boundary |
+| Capability | Official endpoint | Authorization model | Pocket Sera boundary |
 |---|---|---|---|
 | Quote | `POST /swap/quote` | Public | Server proxies quote requests; no client secret is used. |
 | Swap execution | `POST /swap` | EIP-712 signature | The browser signs the user instruction; the server relays only the signed payload. |
@@ -18,21 +18,21 @@ The canonical REST base URL is `https://api.sera.cx/api/v1`. The official API ov
 
 ## Integration constraint
 
-Sera’s public roadmap documentation describes future passive-liquidity positions as a planned FCICAMM extension. Therefore, SeraPay must present the current Vault feature as **Vault deposit and withdrawal**, not as a guaranteed protocol liquidity-yield product, unless a live Sera endpoint explicitly reports an eligible yield or liquidity position.
+Sera’s public roadmap documentation describes future passive-liquidity positions as a planned FCICAMM extension. Therefore, Pocket Sera must present the current Vault feature as **Vault deposit and withdrawal**, not as a guaranteed protocol liquidity-yield product, unless a live Sera endpoint explicitly reports an eligible yield or liquidity position.
 
 ## Account endpoint verification
 
-The official Account Endpoints reference confirms that SeraPay’s existing transaction-builder sequence is native to Sera: `POST /approve`, `POST /deposit`, and `POST /tx/send` are the approval/deposit path; the withdrawal path is `POST /withdraw`, `POST /withdraw/build`, then `POST /withdraw/send`. Every builder response returns the unsigned EIP-1559 transaction fields SeraPay validates before asking the wallet to sign.
+The official Account Endpoints reference confirms that Pocket Sera’s existing transaction-builder sequence is native to Sera: `POST /approve`, `POST /deposit`, and `POST /tx/send` are the approval/deposit path; the withdrawal path is `POST /withdraw`, `POST /withdraw/build`, then `POST /withdraw/send`. Every builder response returns the unsigned EIP-1559 transaction fields Pocket Sera validates before asking the wallet to sign.
 
-`GET /balances` requires an API key and requires its `owner_address` to match the authenticated API-key owner. Production credential provisioning must therefore be completed with the wallet ownership model used by SeraPay’s owner profile; a generic shared API key must not be assumed to read arbitrary wallets.
+`GET /balances` requires an API key and requires its `owner_address` to match the authenticated API-key owner. Production credential provisioning must therefore be completed with the wallet ownership model used by Pocket Sera’s owner profile; a generic shared API key must not be assumed to read arbitrary wallets.
 
 ## Swap endpoint verification
 
-The official `POST /swap/quote` request fields match SeraPay’s current quote adapter: `from_token`, `to_token`, `from_amount`, `owner_address`, `recipient`, `expiration`, and `gas_mode`. The quote endpoint has no API-key requirement.
+The official `POST /swap/quote` request fields match Pocket Sera’s current quote adapter: `from_token`, `to_token`, `from_amount`, `owner_address`, `recipient`, `expiration`, and `gas_mode`. The quote endpoint has no API-key requirement.
 
-The official `POST /swap` execution request requires **four** fields: `uuid`, the signature over `quote.route_params`, `permit_signature`, and `permit_deadline`. SeraPay’s current execution adapter only relays `uuid` and `signature`; it must be upgraded to forward quote-derived permit data and client-side signing must use Sera’s returned `permit.eip712` payload verbatim. Quotes are short-lived, and expired or stale quotes must be discarded rather than retried.
+The official `POST /swap` execution request requires **four** fields: `uuid`, the signature over `quote.route_params`, `permit_signature`, and `permit_deadline`. Pocket Sera’s current execution adapter only relays `uuid` and `signature`; it must be upgraded to forward quote-derived permit data and client-side signing must use Sera’s returned `permit.eip712` payload verbatim. Quotes are short-lived, and expired or stale quotes must be discarded rather than retried.
 
-| Error class | Required SeraPay behavior |
+| Error class | Required Pocket Sera behavior |
 |---|---|
 | `QUOTE_STALE` or `INTENT_DEADLINE_EXPIRED` | Clear the route and require a fresh quote. |
 | `AMOUNT_BELOW_MIN` or `NO_LIQUIDITY` | Preserve the user input, explain the route cannot execute, and allow requoting. |

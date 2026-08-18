@@ -7,14 +7,17 @@ type LocaleContextValue = {
   setLanguage: (language: string) => void;
 };
 
+const LOCALE_STORAGE_KEY = "pocket-sera-language";
+const LEGACY_LOCALE_STORAGE_KEY = "serapay-language";
+
 const LocaleContext = createContext<LocaleContextValue>({ language: "en", copy: getCoreCopy("en"), setLanguage: () => undefined });
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState(() => localStorage.getItem("serapay-language") ?? navigator.language.slice(0, 2));
+  const [language, setLanguage] = useState(() => localStorage.getItem(LOCALE_STORAGE_KEY) ?? localStorage.getItem(LEGACY_LOCALE_STORAGE_KEY) ?? navigator.language.slice(0, 2));
 
   useEffect(() => {
     document.documentElement.lang = language;
-    localStorage.setItem("serapay-language", language);
+    localStorage.setItem(LOCALE_STORAGE_KEY, language);
   }, [language]);
 
   const value = useMemo(() => ({ language, copy: getCoreCopy(language), setLanguage }), [language]);

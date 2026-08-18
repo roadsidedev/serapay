@@ -42,7 +42,7 @@ async function validateManifestMetadata(value: string, submission: z.infer<typeo
 
   const manifest = miniAppManifestSchema.safeParse(await response.json().catch(() => null));
   if (!manifest.success) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Manifest does not satisfy the SeraPay mini-app metadata standard." });
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Manifest does not satisfy the Pocket Sera mini-app metadata standard." });
   }
 
   const hasSamePermissions = manifest.data.permissions.length === submission.permissions.length && manifest.data.permissions.every(permission => submission.permissions.includes(permission));

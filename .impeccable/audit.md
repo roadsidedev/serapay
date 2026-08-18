@@ -8,12 +8,12 @@
 | 2 | Performance | 3/4 | Polling is bounded at five seconds and images are small; backdrop-filter is used across several simultaneous surfaces. |
 | 3 | Responsive Design | 3/4 | Desktop rail and mobile pill are intentional; the developer submission surface is still dense at narrow widths. |
 | 4 | Theming | 3/4 | Light/dark/system tokens work and purple is centralized, but legacy explicit white/black utility classes remain in older surfaces. |
-| 5 | Implementation Integrity | 3/4 | The shell expresses a coherent SeraPay system; detector found 15 mostly low-severity type and isolated-preview drift findings. |
+| 5 | Implementation Integrity | 3/4 | The shell expresses a coherent Pocket Sera system; detector found 15 mostly low-severity type and isolated-preview drift findings. |
 | **Total** | | **15/20** | **Good; fix the repeated hardening and polish gaps before release.** |
 
 ## Implementation Integrity Verdict
 
-Pass. The implementation expresses a coherent product-specific system through the Deep Sera Violet accent, liquid-glass surfaces, live Sera market card, wallet-specific actions, and tabbed Account architecture. The detector’s `Inter` and `#a0a0a0` findings are isolated to the sandbox iframe HTML; they are not host-shell drift, but aligning the preview makes the embedded experience feel intentional.
+Pass. The implementation expresses a coherent product-specific system through the Deep Pocket Violet accent, liquid-glass surfaces, live Sera market card, wallet-specific actions, and tabbed Account architecture. The detector’s `Inter` and `#a0a0a0` findings are isolated to the sandbox iframe HTML; they are not host-shell drift, but aligning the preview makes the embedded experience feel intentional.
 
 ## Executive Summary
 

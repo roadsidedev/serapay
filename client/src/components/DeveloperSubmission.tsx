@@ -25,7 +25,7 @@ type DraftState = {
 
 const steps: Array<{ id: Step; label: string; title: string; description: string }> = [
   { id: 1, label: "Basics", title: "Name your mini app", description: "Give users a clear identity and explain the job it helps them complete." },
-  { id: 2, label: "Launch", title: "Connect the experience", description: "Add the URL and market details SeraPay needs to open the app safely." },
+  { id: 2, label: "Launch", title: "Connect the experience", description: "Add the URL and market details Pocket Sera needs to open the app safely." },
   { id: 3, label: "Access", title: "Set trust boundaries", description: "Add manifest metadata and request only the wallet permissions you need." },
   { id: 4, label: "Review", title: "Review before publishing", description: "Validate the draft, then send it to the owner review queue." },
 ];
@@ -109,7 +109,7 @@ export function DeveloperSubmission() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (readiness !== "ready") {
-      toast.message("Validate your draft first", { description: "SeraPay checks the URLs and manifest before submission." });
+      toast.message("Validate your draft first", { description: "Pocket Sera checks the URLs and manifest before submission." });
       return;
     }
     if (!requireSignIn()) return;

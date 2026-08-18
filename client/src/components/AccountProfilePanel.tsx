@@ -98,7 +98,7 @@ export function AccountProfilePanel({ address, mode = "settings" }: AccountProfi
   const ensureAuthenticated = () => {
     if (appAuthenticated) return true;
     if (configured) login();
-    else toast.error("Set VITE_PRIVY_APP_ID to activate secure SeraPay sign-in.");
+    else toast.error("Set VITE_PRIVY_APP_ID to activate secure Pocket Sera sign-in.");
     return false;
   };
 
@@ -161,7 +161,7 @@ export function AccountProfilePanel({ address, mode = "settings" }: AccountProfi
       const config = seraConfig.data as { chain_id?: number; sera_address?: string } | undefined;
       const typedData = getSeraApiKeyManagementTypedData(ownerAddress, timestamp, { chainId: config?.chain_id, verifyingContract: config?.sera_address });
       const signature = signPrivyTypedData ? await signPrivyTypedData(ownerAddress, typedData) : await signInjectedTypedData(ownerAddress, typedData);
-      await createSeraApiKey.mutateAsync({ ownerAddress, timestamp, signature, label: "SeraPay wallet" });
+      await createSeraApiKey.mutateAsync({ ownerAddress, timestamp, signature, label: "Pocket Sera wallet" });
       toast.success("Sera access enabled for this wallet.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sera access could not be enabled.");
@@ -213,8 +213,8 @@ export function AccountProfilePanel({ address, mode = "settings" }: AccountProfi
     }
   };
 
-  const identityName = user?.name ?? displayName ?? (username ? `@${username}` : "SeraPay account");
-  const fallbackUsername = identityName.replace(/^@/, "").trim().split(/\s+/)[0].toLowerCase() || "serapay";
+  const identityName = user?.name ?? displayName ?? (username ? `@${username}` : "Pocket Sera account");
+  const fallbackUsername = identityName.replace(/^@/, "").trim().split(/\s+/)[0].toLowerCase() || "pocketsera";
   const identityAvatar = resolveMediaUrl(user?.avatarUrl ?? avatarUrl);
   const initial = identityName.slice(0, 1).toUpperCase();
   const usernameStatus = !appAuthenticated ? "Sign in to edit" : !usernameValidity.valid ? usernameValidity.message : normalizedUsername === user?.username ? "Current username" : availability.isFetching ? "Checking availability…" : availability.data?.available ? "Available" : availability.data ? "Taken" : "Choose a username";

@@ -1,4 +1,5 @@
-export type WalletActivityKind = "send" | "swap" | "deposit" | "withdrawal";
+
+export type WalletActivityKind = "swap" | "send" | "deposit" | "withdrawal" | "transfer";
 
 export type WalletActivityEntry = {
   id: string;
@@ -12,11 +13,15 @@ export function createWalletActivityEntry(input: Pick<WalletActivityEntry, "kind
   return { ...input, status: "submitted", createdAt: new Date().toISOString() };
 }
 
-const ACTIVITY_STORAGE_KEY = "serapay-wallet-activity";
+const ACTIVITY_STORAGE_KEY = "pocket-sera-wallet-activity";
+const LEGACY_ACTIVITY_STORAGE_KEY = "serapay-wallet-activity";
 
 export function readWalletActivity(): WalletActivityEntry[] {
   try {
-    const raw = window.localStorage.getItem(ACTIVITY_STORAGE_KEY);
+    const current = window.localStorage.getItem(ACTIVITY_STORAGE_KEY);
+    const legacy = current === null ? window.localStorage.getItem(LEGACY_ACTIVITY_STORAGE_KEY) : null;
+    const raw = current ?? legacy;
+    if (current === null && legacy !== null) window.localStorage.setItem(ACTIVITY_STORAGE_KEY, legacy);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {

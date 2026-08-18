@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { deriveUsernameSuggestion } from "../shared/usernameSuggestion";
 
 describe("deriveUsernameSuggestion", () => {
-  it("prioritizes a linked social username and normalizes it for SeraPay", () => {
+  it("prioritizes a linked social username and normalizes it for Pocket Sera", () => {
     expect(deriveUsernameSuggestion({ linkedAccounts: [{ type: "twitter_oauth", username: "Ayo Pay!" }] })).toBe("ayo_pay");
   });
 

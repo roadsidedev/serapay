@@ -1,6 +1,6 @@
-# SeraPay Production Deployment Guide
+# Pocket Sera Production Deployment Guide
 
-This runbook deploys SeraPay with **Neon** for PostgreSQL, **Railway** for the Express/tRPC backend, and **Vercel** for the Vite frontend. It assumes the `main` branch of [`roadsidedev/serapay`](https://github.com/roadsidedev/serapay) and a new, empty Neon database.
+This runbook deploys Pocket Sera with **Neon** for PostgreSQL, **Railway** for the Express/tRPC backend, and **Vercel** for the Vite frontend. It assumes the `main` branch of [`roadsidedev/serapay`](https://github.com/roadsidedev/serapay) and a new, empty Neon database.
 
 > **Security boundary.** Only Railway receives database, Privy-server, and Sera configuration. Vercel receives only browser-safe variables. Never commit `.env` files or paste a private key, database URL, `SERA_API_SECRET`, `SERA_CREDENTIAL_ENCRYPTION_KEY`, or `PRIVY_APP_SECRET` into the frontend configuration.
 
@@ -8,13 +8,13 @@ This runbook deploys SeraPay with **Neon** for PostgreSQL, **Railway** for the E
 | --- | --- | --- | --- |
 | Database | Neon | Users, profile preferences, mini-app state, review data | None |
 | API | Railway | Privy token verification, Sera server-side relay, tRPC procedures, CORS | Railway HTTPS URL |
-| App | Vercel | Mobile-first SeraPay interface and Privy onboarding | Railway HTTPS API base URL and Privy App ID |
+| App | Vercel | Mobile-first Pocket Sera interface and Privy onboarding | Railway HTTPS API base URL and Privy App ID |
 
 ## 1. Preflight
 
-Use the latest `main` branch, install Node.js 22 and pnpm 10, and create the three provider projects before entering secrets. Keep two Neon connection strings: use the **direct** connection only for administrative work and retain the **pooled** connection for the Railway runtime. This guide’s manual SQL path does not require the direct URL to be stored anywhere in SeraPay.
+Use the latest `main` branch, install Node.js 22 and pnpm 10, and create the three provider projects before entering secrets. Keep two Neon connection strings: use the **direct** connection only for administrative work and retain the **pooled** connection for the Railway runtime. This guide’s manual SQL path does not require the direct URL to be stored anywhere in Pocket Sera.
 
-Create one Privy application for SeraPay. Enable the social and email login methods that the product intends to support and configure the production Vercel URL as an allowed origin. The backend and browser must refer to this exact same Privy application.
+Create one Privy application for Pocket Sera. Enable the social and email login methods that the product intends to support and configure the production Vercel URL as an allowed origin. The backend and browser must refer to this exact same Privy application.
 
 ## 2. Initialize Neon
 
@@ -58,7 +58,7 @@ Set the Railway variables below. Values marked **required** must be present befo
 | `SERA_API_SECRET` | Optional legacy bootstrap | Server-only legacy secret, retained only for controlled maintenance or migration use. It is not used for normal per-user reads. |
 | `PRIVY_APP_ID` | Yes | The same Privy App ID set in Vercel’s `VITE_PRIVY_APP_ID`. |
 | `PRIVY_APP_SECRET` | Yes | Privy server-side App Secret, used to verify access tokens. |
-| `OWNER_PRIVY_DID` | Required for owner moderation | Privy DID for the SeraPay owner account; set after the owner completes their first sign-in. |
+| `OWNER_PRIVY_DID` | Required for owner moderation | Privy DID for the Pocket Sera owner account; set after the owner completes their first sign-in. |
 | `ALLOWED_ORIGIN` | Yes | Exact Vercel production origin, such as `https://serapay.vercel.app`, with **no trailing slash**. |
 
 Do not set browser-prefixed `VITE_*` secrets on Railway as a substitute for server credentials. In particular, do not expose `SERA_API_SECRET`, `PRIVY_APP_SECRET`, or `DATABASE_URL` outside Railway.
@@ -87,7 +87,7 @@ After the first Vercel production deploy, copy its canonical URL into Railway’
 
 ## 5. Bootstrap the owner role
 
-First, sign in to the production Vercel app with the social account that should own SeraPay. Privy will create the account and SeraPay will provision a `users` row. Find the user’s Privy DID in Privy’s dashboard, set it as Railway’s `OWNER_PRIVY_DID`, and redeploy Railway. Sign out and back in, or make another authenticated request, so SeraPay updates that user to the `admin` role. The owner can then review mini-app submissions through the Dev Console.
+First, sign in to the production Vercel app with the social account that should own Pocket Sera. Privy will create the account and Pocket Sera will provision a `users` row. Find the user’s Privy DID in Privy’s dashboard, set it as Railway’s `OWNER_PRIVY_DID`, and redeploy Railway. Sign out and back in, or make another authenticated request, so Pocket Sera updates that user to the `admin` role. The owner can then review mini-app submissions through the Dev Console.
 
 ## 6. Post-deployment verification
 
@@ -106,7 +106,7 @@ Use a dedicated production test account and a wallet funded only with amounts yo
 | Vault withdrawal | Confirm the required dual-signature withdrawal flow, broadcast result, and settlement state before treating the withdrawal as complete. |
 | Owner access | Sign in as the configured owner and verify Dev Console review controls; sign in as a standard user and verify the controls are unavailable. |
 
-> **Mainnet warning.** SeraPay signs and broadcasts real Ethereum mainnet transactions. A successful UI render does not confirm transaction settlement. Always verify the transaction and final asset state with the connected wallet, Sera activity, and an independent block explorer before operational use.
+> **Mainnet warning.** Pocket Sera signs and broadcasts real Ethereum mainnet transactions. A successful UI render does not confirm transaction settlement. Always verify the transaction and final asset state with the connected wallet, Sera activity, and an independent block explorer before operational use.
 
 ## 7. Production handoff checklist
 

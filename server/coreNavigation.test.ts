@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CORE_NAVIGATION } from "../shared/coreNavigation";
 
-describe("SeraPay core navigation", () => {
+describe("Pocket Sera core navigation", () => {
   it("keeps Wallet, Explore, and Account as the only primary destinations", () => {
     expect(CORE_NAVIGATION.map(item => item.id)).toEqual(["wallet", "explore", "account"]);
   });

@@ -2,7 +2,7 @@
 
 ## Design system found
 
-SeraPay already has a shared UI primitive library under `client/src/components/ui`, global CSS tokens in `client/src/index.css`, and a semantic primary color driven through the `--primary`, `--accent`, `--ring`, and liquid-glass utility classes. No new generic design-system package is needed.
+Pocket Sera already has a shared UI primitive library under `client/src/components/ui`, global CSS tokens in `client/src/index.css`, and a semantic primary color driven through the `--primary`, `--accent`, `--ring`, and liquid-glass utility classes. No new generic design-system package is needed.
 
 ## Reusable patterns confirmed
 
@@ -17,7 +17,7 @@ SeraPay already has a shared UI primitive library under `client/src/components/u
 
 ## Token extraction
 
-The durable tokens are Deep Sera Violet `#7161DF`, Violet Highlight `#B8B0FF`, dark and light neutral canvases, Manrope typography, 12px control radii, 24px surface radii, 8/12/16/24/32 spacing rhythm, glass ambient shadows, and the violet active-state lift. These are documented in `DESIGN.md` and `.impeccable/design.json`.
+The durable tokens are Deep Pocket Violet `#7161DF`, Violet Highlight `#B8B0FF`, dark and light neutral canvases, Manrope typography, 12px control radii, 24px surface radii, 8/12/16/24/32 spacing rhythm, glass ambient shadows, and the violet active-state lift. These are documented in `DESIGN.md` and `.impeccable/design.json`.
 
 ## Migration guidance
 

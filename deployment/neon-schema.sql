@@ -1,4 +1,4 @@
--- Apply in Neon after creating the project. This mirrors the SeraPay persistence schema.
+-- Apply in Neon after creating the project. This mirrors the Pocket Sera persistence schema.
 CREATE TYPE user_role AS ENUM ('user', 'admin');
 CREATE TYPE mini_app_status AS ENUM ('pending', 'approved', 'rejected');
 

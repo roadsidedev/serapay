@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalizeUsername, validateUsername } from "../shared/profile";
 
-describe("SeraPay username rules", () => {
+describe("Pocket Sera username rules", () => {
   it("normalizes social-profile names into stable account handles", () => {
     expect(normalizeUsername("  Ayo O'Neill  ")).toBe("ayo_oneill");
     expect(normalizeUsername("@Sera.Pay")).toBe("serapay");

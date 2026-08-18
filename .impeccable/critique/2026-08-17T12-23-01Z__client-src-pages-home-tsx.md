@@ -10,7 +10,7 @@ slug: client-src-pages-home-tsx
 ---
 ⚠️ DEGRADED: single-context (no sub-agent tool exposed in this session)
 
-# SeraPay Frontend Critique
+# Pocket Sera Frontend Critique
 
 ## Design Health Score
 
@@ -30,7 +30,7 @@ slug: client-src-pages-home-tsx
 
 ## Design Specificity Verdict
 
-SeraPay now feels product-specific rather than category-interchangeable because the violet intent color, liquid-glass shell, Sera market status, self-custodial language, and compact Account tabs form a coherent identity. The strongest remaining sameness comes from inherited black/white utility styling in older dialogs and the developer staging surface, which can look like a generic dark dashboard beside the more authored wallet shell.
+Pocket Sera now feels product-specific rather than category-interchangeable because the violet intent color, liquid-glass shell, Sera market status, self-custodial language, and compact Account tabs form a coherent identity. The strongest remaining sameness comes from inherited black/white utility styling in older dialogs and the developer staging surface, which can look like a generic dark dashboard beside the more authored wallet shell.
 
 ## Assessment B: Detector and Browser Evidence
 

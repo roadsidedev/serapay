@@ -132,13 +132,13 @@ export const seraRouter = router({
       const credential = await db.getSeraCredential(ctx.user.id, input.ownerAddress);
       return { configured: Boolean(credential), fingerprint: credential ? getSeraApiKeyFingerprint(credential.apiKey) : null, lastVerifiedAt: credential?.lastVerifiedAt?.toISOString() ?? null };
     } catch {
-      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sera access storage is unavailable. Apply the latest SeraPay database migration, then try again." });
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sera access storage is unavailable. Apply the latest Pocket Sera database migration, then try again." });
     }
   }),
-  createApiKey: protectedProcedure.input(z.object({ ownerAddress: walletAddressSchema, timestamp: z.number().int().positive(), signature: z.string().regex(/^0x[a-fA-F0-9]+$/), label: z.string().trim().min(1).max(80).default("SeraPay wallet") })).mutation(async ({ ctx, input }) => {
+  createApiKey: protectedProcedure.input(z.object({ ownerAddress: walletAddressSchema, timestamp: z.number().int().positive(), signature: z.string().regex(/^0x[a-fA-F0-9]+$/), label: z.string().trim().min(1).max(80).default("Pocket Sera wallet") })).mutation(async ({ ctx, input }) => {
     const ownerAddress = getOwnerAddressOrThrow(input.ownerAddress);
     const boundAddress = ctx.user.embeddedWalletAddress?.toLowerCase();
-    if (boundAddress && boundAddress !== ownerAddress) throw new TRPCError({ code: "FORBIDDEN", message: "This wallet is not linked to your SeraPay account." });
+    if (boundAddress && boundAddress !== ownerAddress) throw new TRPCError({ code: "FORBIDDEN", message: "This wallet is not linked to your Pocket Sera account." });
     assertSeraCredentialEncryptionConfigured();
     const previousCredential = await db.getSeraCredential(ctx.user.id, ownerAddress);
     if (previousCredential) {

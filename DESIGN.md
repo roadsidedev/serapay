@@ -1,5 +1,5 @@
 ---
-name: SeraPay
+name: Pocket Sera
 description: Self-custodial stablecoin command center for Ethereum and Sera
 colors:
   primary: "#7161DF"
@@ -80,13 +80,13 @@ components:
     padding: "0.375rem"
 ---
 
-# Design System: SeraPay
+# Design System: Pocket Sera
 
 ## Overview
 
 **Creative North Star: "The Violet Control Room"**
 
-SeraPay is a focused operating surface for a self-custodial stablecoin wallet. The visual language uses deep indigo light, quiet translucent surfaces, and precise controls to make financial state feel calm and legible rather than noisy or speculative. Purple is reserved for active intent: navigation, primary actions, focus, and meaningful status.
+Pocket Sera is a focused operating surface for a self-custodial stablecoin wallet. The visual language uses deep indigo light, quiet translucent surfaces, and precise controls to make financial state feel calm and legible rather than noisy or speculative. Purple is reserved for active intent: navigation, primary actions, focus, and meaningful status.
 
 The system is intentionally low-copy. Surfaces should explain themselves through hierarchy, familiar iconography, state changes, and direct manipulation. Liquid-glass layers create separation without turning the interface into a stack of opaque boxes; depth comes from blur, tonal gradients, thin translucent borders, and restrained purple glow.
 
@@ -102,7 +102,7 @@ The system is intentionally low-copy. Surfaces should explain themselves through
 The palette is a deep neutral canvas energized by a single violet-indigo accent. The accent should feel scarce enough to signal intent, not become wallpaper.
 
 ### Primary
-- **Deep Sera Violet** (`#7161DF`): Primary actions, selected tabs, active navigation, focus, and intentional status.
+- **Deep Pocket Violet** (`#7161DF`): Primary actions, selected tabs, active navigation, focus, and intentional status.
 - **Violet Highlight** (`#B8B0FF`): Secondary emphasis, live indicators, and icon detail on dark glass.
 - **Soft Violet Wash** (`rgba(113, 97, 223, 0.12)`): Icon wells, selected-state halos, and low-intensity surface tint.
 
@@ -143,7 +143,7 @@ Use a compact rhythm built from roughly 8px, 12px, 16px, 24px, and 32px steps. M
 
 ## Elevation & Depth
 
-SeraPay uses a layered hybrid: tonal background differences establish the base hierarchy, while liquid glass adds blur, saturation, and subtle lift. Shadows are ambient rather than structural. A purple glow belongs to active controls, glass navigation, and high-value focus points; inactive surfaces should remain quiet.
+Pocket Sera uses a layered hybrid: tonal background differences establish the base hierarchy, while liquid glass adds blur, saturation, and subtle lift. Shadows are ambient rather than structural. A purple glow belongs to active controls, glass navigation, and high-value focus points; inactive surfaces should remain quiet.
 
 ### Shadow Vocabulary
 - **Glass ambient:** `0 18px 50px rgba(0, 0, 0, 0.22)` for large glass surfaces.
@@ -160,7 +160,7 @@ The shape language is gently rounded and tactile. Small controls use approximate
 
 ### Buttons
 - **Shape:** Gently rounded controls (`12px` typical; pill for sign-in and account actions).
-- **Primary:** Deep Sera Violet background, white foreground, compact horizontal padding, and restrained purple ambient lift.
+- **Primary:** Deep Pocket Violet background, white foreground, compact horizontal padding, and restrained purple ambient lift.
 - **Hover / Focus:** Darken the violet slightly on hover, preserve visible focus outlines, and use a subtle translation or glow rather than a large scale jump.
 - **Secondary / Ghost:** Transparent or glass-backed with muted text, becoming violet-tinted on hover or active state.
 

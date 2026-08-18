@@ -12,11 +12,11 @@ Primary users are people who want a simple, mobile-friendly way to use Ethereum 
 
 ## Product Purpose
 
-SeraPay is a self-custodial Ethereum stablecoin wallet that organizes wallet balances, Sera Vault assets, trusted Sera actions, and mini apps in one focused product surface. Success means a user can understand their wallet state and complete common actions without relying on helper copy or technical guidance.
+Pocket Sera is a self-custodial Ethereum stablecoin wallet that organizes wallet balances, Sera Vault assets, trusted Sera actions, and mini apps in one focused product surface. Success means a user can understand their wallet state and complete common actions without relying on helper copy or technical guidance.
 
 ## Positioning
 
-SeraPay combines social wallet onboarding with user-controlled Ethereum assets and a curated mini-app surface, while keeping Sera protocol actions close to the wallet experience.
+Pocket Sera combines social wallet onboarding with user-controlled Ethereum assets and a curated mini-app surface, while keeping Sera protocol actions close to the wallet experience.
 
 ## Operating Context
 
@@ -28,7 +28,7 @@ The product must preserve self-custody, explicit wallet approval for sensitive o
 
 ## Brand Commitments
 
-The product name is SeraPay. The established visual accent is #7161DF, a deep purple/indigo. The interface should remain focused, calm, modern, and low-copy while retaining a polished glass-inspired surface language.
+The product name is Pocket Sera. The established visual accent is #7161DF, a deep purple/indigo. The interface should remain focused, calm, modern, and low-copy while retaining a polished glass-inspired surface language.
 
 ## Evidence on Hand
 

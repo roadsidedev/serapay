@@ -44,14 +44,14 @@ export const profileRouter = router({
         preferredLanguage: input.preferredLanguage,
         deviceApproval: input.deviceApproval,
       });
-      if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "SeraPay profile not found." });
+      if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Pocket Sera profile not found." });
       return user;
     }),
   uploadAvatar: protectedProcedure.input(z.object({ dataUrl: avatarDataUrlInput })).mutation(async ({ ctx, input }) => {
     const { buffer, contentType } = decodeAvatarDataUrl(input.dataUrl);
     const stored = await storagePut(`avatars/${ctx.user.id}/profile`, buffer, contentType);
     const user = await db.updateUserProfile(ctx.user.id, { avatarUrl: stored.url });
-    if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "SeraPay profile not found." });
+    if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Pocket Sera profile not found." });
     return { avatarUrl: stored.url };
   }),
 });

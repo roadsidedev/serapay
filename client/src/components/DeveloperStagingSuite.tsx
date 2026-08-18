@@ -8,7 +8,7 @@ import { ChevronDown, Code2, ExternalLink, Laptop, RefreshCw, ShieldCheck } from
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const simulatorContext = {
-  type: "serapay:staging-context",
+  type: "pocket-sera:staging-context",
   version: 1,
   environment: "staging",
   wallet: {
@@ -20,15 +20,15 @@ const simulatorContext = {
 };
 
 export function DeveloperStagingSuite() {
-  const [enabled, setEnabled] = useState(() => localStorage.getItem("serapay-dev-mode") === "true");
-  const [url, setUrl] = useState(() => localStorage.getItem("serapay-staging-url") ?? "http://localhost:5173");
+  const [enabled, setEnabled] = useState(() => localStorage.getItem("pocket-sera-dev-mode") === "true" || localStorage.getItem("serapay-dev-mode") === "true");
+  const [url, setUrl] = useState(() => localStorage.getItem("pocket-sera-staging-url") ?? localStorage.getItem("serapay-staging-url") ?? "http://localhost:5173");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const frame = useRef<HTMLIFrameElement>(null);
   const isValid = isStagingMiniAppUrl(url);
   const previewUrl = useMemo(() => isValid ? url.trim() : "", [isValid, url]);
 
-  useEffect(() => { localStorage.setItem("serapay-dev-mode", String(enabled)); }, [enabled]);
-  useEffect(() => { localStorage.setItem("serapay-staging-url", url); }, [url]);
+  useEffect(() => { localStorage.setItem("pocket-sera-dev-mode", String(enabled)); }, [enabled]);
+  useEffect(() => { localStorage.setItem("pocket-sera-staging-url", url); }, [url]);
 
   const sendSimulatorContext = () => frame.current?.contentWindow?.postMessage(simulatorContext, "*");
 

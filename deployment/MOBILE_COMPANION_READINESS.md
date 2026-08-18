@@ -1,6 +1,6 @@
-# SeraPay Mobile Companion Readiness
+# Pocket Sera Mobile Companion Readiness
 
-**SeraPay is implemented as a responsive web wallet first.** The recommended native-distribution path is to wrap the production Vercel build in Capacitor, keeping the existing React client and Railway API as the primary application surfaces. Capacitor applications are released through the normal native App Store and Google Play processes rather than through a separate web-specific store flow.[1] [2]
+**Pocket Sera is implemented as a responsive web wallet first.** The recommended native-distribution path is to wrap the production Vercel build in Capacitor, keeping the existing React client and Railway API as the primary application surfaces. Capacitor applications are released through the normal native App Store and Google Play processes rather than through a separate web-specific store flow.[1] [2]
 
 ## Responsive verification
 
@@ -22,7 +22,7 @@ The wallet shell was checked at the handset dimensions below with the live devel
 | Railway API | Sera server-side adapter, per-user Sera credential encryption, Privy access-token verification, tRPC, Neon access | Configure `DATABASE_URL`, Privy server credentials, `SERA_CREDENTIAL_ENCRYPTION_KEY`, `OWNER_PRIVY_DID`, and `ALLOWED_ORIGIN` only in Railway. |
 | Neon | User identity, handles, preferences, mini-app registry, favorite/recent state | Apply the pending Postgres migrations before enabling profile and personalization persistence in production. |
 
-> **Key boundary:** The wallet-export control opens Privy’s protected SDK flow. SeraPay does not receive or store wallet private keys, seed phrases, or recovery material.
+> **Key boundary:** The wallet-export control opens Privy’s protected SDK flow. Pocket Sera does not receive or store wallet private keys, seed phrases, or recovery material.
 
 ## Capacitor integration sequence
 
