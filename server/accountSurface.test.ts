@@ -18,4 +18,9 @@ describe("Account navigation surface", () => {
     expect(accountPanelSource).not.toContain("Open Dev Console");
     expect(homeSource).toContain("function AccountView");
   });
+
+  it("links developers to the public Pocket Sera documentation from Dev Console", () => {
+    expect(homeSource).toContain("https://serapay.vercel.app/doc/");
+    expect(homeSource).toContain("Developer documentation");
+  });
 });

@@ -49,3 +49,5 @@
 - [x] Define and document the Pocket Mini App framework, manifest contract, wallet interaction boundary, review process, and production deployment procedure.
 - [x] Configure Pocket Sera documentation for production hosting at `pocket-sera.com/doc` and validate the static build.
 - [ ] Deploy the updated Vercel artifact and connect `pocket-sera.com` so the public docs URL `https://pocket-sera.com/doc` can be verified.
+- [x] Verify the public documentation deployment at `https://serapay.vercel.app/doc/` and record the result.
+- [x] Add a visible Pocket Sera documentation link to the Account Dev Console and validate the interaction.

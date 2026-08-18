@@ -389,7 +389,84 @@ function AccountView({ address, isAdmin, isAuthenticated }: { address: string | 
   const [tab, setTab] = useState<"settings" | "dev" | "activity">("settings");
   const seraKeyStatus = trpc.sera.apiKeyStatus.useQuery({ ownerAddress: address ?? "0x0000000000000000000000000000000000000000" }, { enabled: Boolean(address && isAuthenticated), retry: false });
   const tabs = [{ id: "settings", label: "Settings", icon: Settings2 }, { id: "dev", label: "Dev console", icon: Code2 }, { id: "activity", label: "Activity", icon: Activity }] as const;
-  return <section className="mx-auto max-w-[1050px] space-y-5"><header><div className="flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9b90f5]">Account</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Your account</h1></div></div></header><div className="mb-1"><AccountProfilePanel address={address} mode="profile" /></div><div className="glass-control flex w-full gap-1 rounded-2xl p-1" role="tablist" aria-label="Account sections">{tabs.map(item => { const Icon = item.icon; return <button key={item.id} role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)} className={cn("flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-2 text-xs font-medium transition", tab === item.id ? "bg-[#7161DF] text-white shadow-[0_8px_22px_rgba(113,97,223,0.28)]" : "text-white/55 hover:text-white")}><Icon className="h-4 w-4" />{item.label}</button>; })}</div>{tab === "settings" ? <AccountProfilePanel address={address} mode="settings" /> : null}{tab === "dev" ? <section className="liquid-glass rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Code2 className="h-4 w-4" /></span><div><p className="text-sm font-medium text-white">Build and publish mini apps</p><p className="mt-1 text-xs text-white/45">Developer tools for your mini-app workflow.</p></div></div><div className="space-y-5"><DeveloperStagingSuite /><DeveloperSubmission />{isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}</div></section> : null}{tab === "activity" ? <section className="liquid-glass rounded-3xl p-4 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Activity className="h-4 w-4" /></span><p className="text-sm font-medium text-white">Activity</p></div><ActivityJournal address={address} isAuthenticated={isAuthenticated} seraConfigured={Boolean(seraKeyStatus.data?.configured)} seraStatusError={Boolean(seraKeyStatus.error)} /></section> : null}</section>;
+  const developerDocsUrl = "https://serapay.vercel.app/doc/";
+
+  return (
+    <section className="mx-auto max-w-[1050px] space-y-5">
+      <header>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9b90f5]">Account</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Your account</h1>
+          </div>
+        </div>
+      </header>
+
+      <div className="mb-1"><AccountProfilePanel address={address} mode="profile" /></div>
+
+      <div className="glass-control flex w-full gap-1 rounded-2xl p-1" role="tablist" aria-label="Account sections">
+        {tabs.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              role="tab"
+              aria-selected={tab === item.id}
+              onClick={() => setTab(item.id)}
+              className={cn(
+                "flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-2 text-xs font-medium transition",
+                tab === item.id ? "bg-[#7161DF] text-white shadow-[0_8px_22px_rgba(113,97,223,0.28)]" : "text-white/55 hover:text-white"
+              )}
+            >
+              <Icon className="h-4 w-4" />{item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === "settings" ? <AccountProfilePanel address={address} mode="settings" /> : null}
+
+      {tab === "dev" ? (
+        <section className="liquid-glass rounded-3xl p-4 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]">
+                <Code2 className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-white">Build and publish mini apps</p>
+                <p className="mt-1 text-xs text-white/45">Developer tools for your mini-app workflow.</p>
+              </div>
+            </div>
+            <a
+              href={developerDocsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.05] px-3 text-xs font-medium text-white transition hover:border-[#7161DF]/60 hover:bg-[#7161DF]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8b0ff]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Developer documentation
+            </a>
+          </div>
+          <div className="space-y-5">
+            <DeveloperStagingSuite />
+            <DeveloperSubmission />
+            {isAdmin ? <section className="border-t border-white/10 pt-5"><AdminReview /></section> : null}
+          </div>
+        </section>
+      ) : null}
+
+      {tab === "activity" ? (
+        <section className="liquid-glass rounded-3xl p-4 sm:p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#7161DF]/35 bg-[#7161DF]/12 text-[#b8b0ff]"><Activity className="h-4 w-4" /></span>
+            <p className="text-sm font-medium text-white">Activity</p>
+          </div>
+          <ActivityJournal address={address} isAuthenticated={isAuthenticated} seraConfigured={Boolean(seraKeyStatus.data?.configured)} seraStatusError={Boolean(seraKeyStatus.error)} />
+        </section>
+      ) : null}
+    </section>
+  );
 }
 
 export default function Home() {
